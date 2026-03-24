@@ -5,8 +5,14 @@
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  /* Golden themed background for the frontend */
-  background: linear-gradient(135deg, #fef3c7, #facc15, #f59e0b);
+  /* Golden themed background with worker imagery */
+  background-image:
+    linear-gradient(135deg, rgba(254, 243, 199, 0.9), rgba(250, 204, 21, 0.85), rgba(245, 158, 11, 0.85)),
+    url('https://images.pexels.com/photos/5591840/pexels-photo-5591840.jpeg?auto=compress&cs=tinysrgb&w=1600');
+  background-size: cover;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-position: center;
   color: #222;
 }
 

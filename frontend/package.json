@@ -1,6 +1,7 @@
 {
   "name": "trusthome-frontend",
   "version": "0.0.1",
+  "type": "module",
   "private": true,
   "type": "module",
   "scripts": {

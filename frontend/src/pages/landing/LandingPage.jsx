@@ -17,9 +17,14 @@ export const LandingPage = () => {
         </div>
       </div>
       <div className="hero-grid">
-        <div className="hero-card">Laundry &amp; House Cleaning</div>
-        <div className="hero-card">Cooking &amp; Dishwashing</div>
-        <div className="hero-card">Childcare &amp; Monthly Help</div>
+        <div className="hero-card">Laundry</div>
+        <div className="hero-card">Cooking</div>
+        <div className="hero-card">House Cleaning</div>
+        <div className="hero-card">Utensils</div>
+        <div className="hero-card">Dishwashing</div>
+        <div className="hero-card">Nanny</div>
+        <div className="hero-card">Childcare</div>
+        <div className="hero-card">House Help (Monthly Tier)</div>
       </div>
     </section>
   );
