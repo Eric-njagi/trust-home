@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
-import { NavBar } from './components/CommonComponents.jsx';
+import { NavBar, TaskBar } from './components/CommonComponents.jsx';
 import {
   LandingPage,
   LoginPage,
@@ -29,6 +29,7 @@ const App = () => {
   return (
     <div className="app-root">
       <NavBar />
+      <TaskBar />
       <main className="app-main">
         <Routes>
           <Route path="/" element={<LandingPage />} />

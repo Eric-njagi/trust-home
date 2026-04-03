@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { SERVICE_CATEGORIES } from '../constants/services.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { chatApi } from '../services/apiClient.js';
@@ -57,6 +57,48 @@ export const NavBar = () => {
         )}
       </div>
     </header>
+  );
+};
+
+const CLIENT_TABS = [
+  { id: 'browse', label: 'Browse Workers' },
+  { id: 'invoices', label: 'Invoices' },
+  { id: 'payment', label: 'Payment' },
+  { id: 'chat', label: 'Chat' },
+];
+
+const WORKER_TABS = [
+  { id: 'jobs', label: 'My Jobs' },
+  { id: 'profile', label: 'Profile' },
+  { id: 'availability', label: 'Availability' },
+  { id: 'chat', label: 'Chat' },
+];
+
+export const TaskBar = () => {
+  const { user } = useAuth();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const isDashboard =
+    location.pathname.startsWith('/worker') || location.pathname.startsWith('/client');
+
+  if (!user || !isDashboard) return null;
+
+  const tabs = user.role === 'worker' ? WORKER_TABS : CLIENT_TABS;
+  const activeTab = searchParams.get('tab') || tabs[0].id;
+
+  return (
+    <nav className="taskbar">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          className={`taskbar-tab${activeTab === tab.id ? ' active' : ''}`}
+          onClick={() => setSearchParams({ tab: tab.id })}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </nav>
   );
 };
 
