@@ -22,7 +22,7 @@ export const LoginPage = () => {
       login(user);
       navigate(role === 'worker' ? '/worker' : '/client');
     } catch (err) {
-      setError('Login failed.');
+      setError(err.message || 'Login failed.');
     } finally {
       setLoading(false);
     }
@@ -38,6 +38,7 @@ export const LoginPage = () => {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
             required
           />
         </label>
@@ -47,6 +48,7 @@ export const LoginPage = () => {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
             required
           />
         </label>

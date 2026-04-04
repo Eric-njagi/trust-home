@@ -24,7 +24,7 @@ export const SignupPage = () => {
       login(user);
       navigate(role === 'worker' ? '/worker' : '/client');
     } catch (err) {
-      setError('Sign up failed.');
+      setError(err.message || 'Sign up failed.');
     } finally {
       setLoading(false);
     }
@@ -40,6 +40,7 @@ export const SignupPage = () => {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            autoComplete="name"
             required
           />
         </label>
@@ -49,6 +50,7 @@ export const SignupPage = () => {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
             required
           />
         </label>
@@ -58,6 +60,8 @@ export const SignupPage = () => {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+            minLength={6}
             required
           />
         </label>

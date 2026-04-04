@@ -133,30 +133,48 @@ export const RatingStars = ({ value }) => {
 };
 
 export const ChatWindow = ({ initialMessagesRole }) => {
-  const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const [chatError, setChatError] = useState('');
 
   useEffect(() => {
     async function loadMessages() {
-      const data = await chatApi.listMessages();
-      setMessages(data);
+      try {
+        const data = await chatApi.listMessages();
+        setMessages(data);
+      } catch {
+        setMessages([]);
+      }
     }
     loadMessages();
   }, []);
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || sending) return;
     const from = initialMessagesRole === 'worker' ? 'worker' : 'client';
-    const newMsg = await chatApi.sendMessage({ from, text: input.trim() });
-    setMessages((prev) => [...prev, newMsg]);
-    setInput('');
+    setSending(true);
+    setChatError('');
+    try {
+      const newMsg = await chatApi.sendMessage({ from, text: input.trim() });
+      setMessages((prev) => [...prev, newMsg]);
+      setInput('');
+    } catch (err) {
+      setChatError(err.message || 'Message could not be sent.');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
     <div className="card chat-window">
       <h3>Chat</h3>
+      {chatError && (
+        <p className="error-text" role="alert">
+          {chatError}
+        </p>
+      )}
       <div className="chat-messages">
         {messages.map((m) => (
           <div
@@ -177,9 +195,12 @@ export const ChatWindow = ({ initialMessagesRole }) => {
           placeholder="Type a message…"
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          disabled={sending}
+          aria-busy={sending}
+          maxLength={4000}
         />
-        <button type="submit" className="btn primary small">
-          Send
+        <button type="submit" className="btn primary small" disabled={sending || !input.trim()}>
+          {sending ? 'Sending…' : 'Send'}
         </button>
       </form>
     </div>
@@ -187,16 +208,29 @@ export const ChatWindow = ({ initialMessagesRole }) => {
 };
 
 export const WorkerSummary = ({ worker }) => {
+  const services = Array.isArray(worker.services) ? worker.services : [];
+  const rate = Number(worker.hourlyRate) || 0;
   return (
     <div className="worker-summary">
       <h4>{worker.name}</h4>
       <p className="muted">{worker.city}</p>
       <p>
         Services:{' '}
-        {worker.services.map((svc) => getServiceLabel(svc)).join(', ')}
+        {services.length > 0 ? (
+          services.map((svc) => getServiceLabel(svc)).join(', ')
+        ) : (
+          <span className="muted">Not listed yet</span>
+        )}
       </p>
       <p>
-        Rate: <strong>${worker.hourlyRate.toFixed(2)}</strong> / hour
+        Rate:{' '}
+        {rate > 0 ? (
+          <>
+            <strong>${rate.toFixed(2)}</strong> / hour
+          </>
+        ) : (
+          <span className="muted">Add your hourly rate</span>
+        )}
       </p>
       <p>
         Status:{' '}

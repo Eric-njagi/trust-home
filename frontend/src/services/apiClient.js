@@ -1,60 +1,113 @@
-import { mockWorkers, mockJobs, mockInvoices, mockMessages } from '../data/mockData.js';
+const TOKEN_KEY = 'trusthome_token';
 
-// In later steps, replace these with real HTTP calls to the FastAPI backend.
+export function getStoredToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setStoredToken(token) {
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  else localStorage.removeItem(TOKEN_KEY);
+}
+
+async function request(path, { method = 'GET', body, sendAuth = true } = {}) {
+  const headers = {};
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (sendAuth) {
+    const t = getStoredToken();
+    if (t) headers.Authorization = `Bearer ${t}`;
+  }
+
+  const res = await fetch(path, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+
+  const text = await res.text();
+  let data;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = text;
+  }
+
+  if (!res.ok) {
+    const detail = data?.detail;
+    const msg =
+      typeof detail === 'string'
+        ? detail
+        : Array.isArray(detail)
+          ? detail.map((d) => d.msg || d).join(', ')
+          : res.statusText;
+    throw new Error(msg || 'Request failed');
+  }
+  return data;
+}
 
 export const authApi = {
   login: async ({ email, password, role }) => {
-    // Mock: accept any credentials and return a basic user object.
-    return {
-      id: 'u1',
-      name: email.split('@')[0] || 'User',
-      email,
-      role,
-    };
+    const data = await request('/api/auth/login', {
+      method: 'POST',
+      body: { email, password, role },
+      sendAuth: false,
+    });
+    setStoredToken(data.access_token);
+    return data.user;
   },
   signup: async ({ name, email, password, role }) => {
-    // Mock: echo back a created user.
-    return {
-      id: 'u2',
-      name,
-      email,
-      role,
-    };
+    const data = await request('/api/auth/signup', {
+      method: 'POST',
+      body: { name, email, password, role },
+      sendAuth: false,
+    });
+    setStoredToken(data.access_token);
+    return data.user;
   },
 };
 
 export const workerApi = {
   listWorkers: async (filters = {}) => {
     const { serviceId } = filters;
-    let workers = [...mockWorkers];
-    if (serviceId) {
-      workers = workers.filter((w) => w.services.includes(serviceId));
-    }
-    return workers;
+    const q = serviceId ? `?serviceId=${encodeURIComponent(serviceId)}` : '';
+    return request(`/api/workers${q}`);
   },
-  getWorkerJobs: async (workerId) => {
-    return mockJobs.filter((j) => j.workerId === workerId);
+  getMyJobs: async () => {
+    return request('/api/workers/me/jobs');
+  },
+  getMyProfile: async () => {
+    return request('/api/workers/me');
+  },
+  updateMyProfile: async (payload) => {
+    return request('/api/workers/me', { method: 'PATCH', body: payload });
+  },
+  updateJobStatus: async (jobId, status) => {
+    return request(`/api/workers/me/jobs/${jobId}`, {
+      method: 'PATCH',
+      body: { status },
+    });
   },
 };
 
 export const clientApi = {
   listInvoices: async () => {
-    return mockInvoices;
+    return request('/api/clients/me/invoices');
+  },
+  createBooking: async (payload) => {
+    return request('/api/clients/me/bookings', { method: 'POST', body: payload });
+  },
+  payInvoice: async (invoiceId) => {
+    return request(`/api/clients/me/invoices/${invoiceId}/pay`, { method: 'PATCH' });
   },
 };
 
 export const chatApi = {
   listMessages: async () => {
-    return mockMessages;
+    return request('/api/chat/messages');
   },
   sendMessage: async ({ from, text }) => {
-    const message = {
-      id: `m-${Date.now()}`,
-      from,
-      text,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-    // In a real app this would POST to backend /chat; here we just echo.
-    return message;
+    return request('/api/chat/messages', {
+      method: 'POST',
+      body: { from, text },
+    });
   },
 };
