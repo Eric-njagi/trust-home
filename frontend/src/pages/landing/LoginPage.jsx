@@ -30,43 +30,48 @@ export const LoginPage = () => {
 
   return (
     <section className="page auth-page">
-      <h2>Log In</h2>
-      <form className="card form" onSubmit={handleSubmit}>
-        <label>
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-            required
-          />
-        </label>
-        <label>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            required
-          />
-        </label>
-        <label>
-          I am a
-          <select value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="worker">Worker</option>
-            <option value="client">Client</option>
-          </select>
-        </label>
-        {error && <p className="error-text">{error}</p>}
-        <button className="btn primary" type="submit" disabled={loading}>
-          {loading ? 'Logging in…' : 'Log In'}
-        </button>
-        <p className="helper-text">
-          Don&apos;t have an account? <Link to="/signup">Sign up</Link>
-        </p>
-      </form>
+      <div className="auth-shell">
+        <header className="auth-shell-header">
+          <h2 className="auth-shell-title">Welcome back</h2>
+          <p className="auth-shell-lead">Sign in with the role you registered as — worker or client.</p>
+        </header>
+        <form className="card form auth-form" onSubmit={handleSubmit}>
+          <label>
+            Email
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              required
+            />
+          </label>
+          <label>
+            Password
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+          </label>
+          <label>
+            I am a
+            <select value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="worker">Worker</option>
+              <option value="client">Client</option>
+            </select>
+          </label>
+          {error && <p className="error-text">{error}</p>}
+          <button className="btn primary auth-submit" type="submit" disabled={loading}>
+            {loading ? 'Logging in…' : 'Log In'}
+          </button>
+          <p className="helper-text">
+            Don&apos;t have an account? <Link to="/signup">Sign up</Link>
+          </p>
+        </form>
+      </div>
     </section>
   );
 };

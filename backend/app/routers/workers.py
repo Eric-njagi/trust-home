@@ -157,7 +157,7 @@ def update_job_status(
         hours = Decimal("3")
         amount = (wp.hourly_rate or Decimal("0")) * hours
         if amount <= 0:
-            amount = Decimal("50")
+            amount = Decimal("1500")
         inv = Invoice(
             job_id=job.id,
             client_user_id=job.client_user_id,

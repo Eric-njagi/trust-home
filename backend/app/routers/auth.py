@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -32,11 +33,12 @@ def signup(body: SignupBody, db: Annotated[Session, Depends(get_db)]) -> TokenRe
     db.flush()
 
     if body.role == "worker":
+        rate = Decimal(str(body.hourly_rate)) if body.hourly_rate is not None else Decimal("0")
         db.add(
             WorkerProfile(
                 user_id=user.id,
                 city="",
-                hourly_rate=0,
+                hourly_rate=rate,
                 available=True,
                 rating_avg=0,
                 services=[],

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getServiceLabel } from '../data/mockData.js';
 import { clientApi } from '../services/apiClient.js';
+import { formatKes } from '../utils/formatKes.js';
 import { ServiceCategorySelect, WorkerSummary } from './CommonComponents.jsx';
 
 export const WorkerBrowser = ({ workers, onBooked }) => {
@@ -102,7 +103,7 @@ export const WorkerBrowser = ({ workers, onBooked }) => {
           Time window
           <input
             type="text"
-            placeholder="e.g. 10:00 - 12:00"
+            placeholder="e.g. 10:00 – 14:00 (EAT)"
             value={time}
             onChange={(e) => setTime(e.target.value)}
             required
@@ -136,7 +137,7 @@ export const InvoiceList = ({ invoices }) => {
               </p>
             </div>
             <div className="invoice-meta">
-              <span className="amount">${inv.amount.toFixed(2)}</span>
+              <span className="amount">{formatKes(inv.amount)}</span>
               <span className={`status badge ${inv.status.toLowerCase()}`}>
                 {inv.status}
               </span>
@@ -148,15 +149,39 @@ export const InvoiceList = ({ invoices }) => {
   );
 };
 
+function nationalDigitsForMpesa(raw) {
+  let d = String(raw || '').replace(/\D/g, '');
+  if (d.startsWith('254')) d = d.slice(3);
+  if (d.startsWith('0')) d = d.slice(1);
+  return d.slice(0, 9);
+}
+
 export const PaymentPlaceholder = ({ invoices, onPaid }) => {
   const unpaid = invoices.filter((i) => i.status === 'Unpaid');
+  const [mpesaLocal, setMpesaLocal] = useState('');
   const [payingId, setPayingId] = useState(null);
+  const [notice, setNotice] = useState('');
+
+  const mpesaInternational = () => {
+    const d = nationalDigitsForMpesa(mpesaLocal);
+    if (d.length !== 9 || !'17'.includes(d[0])) return '';
+    return `254${d}`;
+  };
 
   const payOne = async (id) => {
+    const phone = mpesaInternational();
+    if (!phone) {
+      alert('Enter a valid M-Pesa number after +254 (e.g. 712 345 678 or 112 345 678).');
+      return;
+    }
     setPayingId(id);
+    setNotice('');
     try {
-      await clientApi.payInvoice(id);
+      await clientApi.payInvoice(id, { mpesaPhone: phone });
       await onPaid?.();
+      setNotice(
+        'Payment recorded. With Safaricom Daraja connected, an STK Push would appear on your phone to enter your M-Pesa PIN.',
+      );
     } catch (err) {
       alert(err.message || 'Payment failed.');
     } finally {
@@ -166,45 +191,59 @@ export const PaymentPlaceholder = ({ invoices, onPaid }) => {
 
   return (
     <div className="card payment-placeholder">
-      <h3>Payment</h3>
+      <h3>M-Pesa</h3>
       <p className="muted">
-        Demo billing: mark an invoice as paid (no real card charges).
+        Pay each invoice from your M-Pesa line. Amounts are shown in Kenyan Shillings (KSh).
       </p>
       {unpaid.length === 0 && <p className="muted">No unpaid invoices.</p>}
+      {unpaid.length > 0 && (
+        <form className="form compact" onSubmit={(e) => e.preventDefault()}>
+          <label className="field">
+            M-Pesa phone number
+            <div className="input-with-prefix mpesa-phone-input">
+              <span className="input-prefix" aria-hidden="true">
+                +254
+              </span>
+              <input
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel-national"
+                placeholder="712 345 678"
+                value={mpesaLocal}
+                onChange={(e) => setMpesaLocal(nationalDigitsForMpesa(e.target.value))}
+                aria-describedby="mpesa-phone-hint"
+              />
+            </div>
+            <span id="mpesa-phone-hint" className="input-hint">
+              Use the handset that receives your M-Pesa messages. You can paste 07… or 011…;
+              we store only what is needed to request payment.
+            </span>
+          </label>
+        </form>
+      )}
+      {notice && (
+        <p className="success-text" role="status">
+          {notice}
+        </p>
+      )}
       <ul className="invoice-list compact">
         {unpaid.map((inv) => (
           <li key={inv.id} className="invoice-item">
             <div>
               <strong>{inv.service}</strong>
-              <span className="muted"> ${inv.amount.toFixed(2)}</span>
+              <span className="muted"> {formatKes(inv.amount)}</span>
             </div>
             <button
               type="button"
-              className="btn secondary small"
+              className="btn mpesa small"
               disabled={payingId === inv.id}
               onClick={() => payOne(inv.id)}
             >
-              {payingId === inv.id ? 'Processing…' : 'Mark paid'}
+              {payingId === inv.id ? 'Confirming…' : 'Pay with M-Pesa'}
             </button>
           </li>
         ))}
       </ul>
-      <form className="form compact" onSubmit={(e) => e.preventDefault()}>
-        <label>
-          Card number
-          <input type="text" placeholder="•••• •••• •••• ••••" disabled />
-        </label>
-        <div className="row two-cols">
-          <label>
-            Expiry
-            <input type="text" placeholder="MM/YY" disabled />
-          </label>
-          <label>
-            CVC
-            <input type="text" placeholder="•••" disabled />
-          </label>
-        </div>
-      </form>
     </div>
   );
 };

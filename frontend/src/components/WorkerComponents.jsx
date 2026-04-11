@@ -288,7 +288,7 @@ export const WorkerProfilePanel = ({ profile, onProfileSaved, onRetry }) => {
                 type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                placeholder="e.g. Springfield, IL"
+                placeholder="e.g. Westlands, Nairobi"
                 autoComplete="address-level2"
                 maxLength={128}
               />
@@ -301,24 +301,25 @@ export const WorkerProfilePanel = ({ profile, onProfileSaved, onRetry }) => {
               Rate
             </h4>
             <label className="profile-field profile-field-rate">
-              <span className="profile-field-label">Hourly rate (USD)</span>
+              <span className="profile-field-label">Hourly rate (KSh)</span>
               <div className="input-with-prefix">
                 <span className="input-prefix" aria-hidden="true">
-                  $
+                  KSh
                 </span>
                 <input
                   type="number"
                   min="0"
-                  step="0.01"
-                  inputMode="decimal"
+                  step="1"
+                  inputMode="numeric"
                   value={hourlyRate}
                   onChange={(e) => setHourlyRate(e.target.value)}
-                  placeholder="0.00"
+                  placeholder="0"
                   aria-describedby="rate-hint"
                 />
               </div>
               <span id="rate-hint" className="input-hint">
-                Used to estimate invoices when you accept a job (3-hour default on the platform).
+                Used to estimate invoices when you accept a job (three-hour default). Clients pay
+                in Kenyan Shillings via M-Pesa.
               </span>
             </label>
           </section>

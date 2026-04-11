@@ -11,6 +11,14 @@ SERVICE_LABELS: dict[str, str] = {
     "house_help_monthly": "House Help (Monthly Tier)",
     "gardening": "Gardening",
     "pet_care": "Pet Care",
+    "vehicle_cleaning": "Car Cleaning & Valet",
+    "carpet_upholstery_cleaning": "Carpets, Rugs & Upholstery",
+    "moving_packing": "Moving & Packing Help",
+    "interior_decor": "Home Décor & Styling",
+    "fumigation_pest_control": "Fumigation & Pest Control",
+    "window_glass_cleaning": "Windows & Glass",
+    "ironing_wardrobe": "Ironing & Wardrobe Care",
+    "shopping_household_errands": "Shopping & Household Errands",
 }
 
 

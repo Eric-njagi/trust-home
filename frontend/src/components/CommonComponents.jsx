@@ -4,6 +4,7 @@ import { SERVICE_CATEGORIES } from '../constants/services.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { chatApi } from '../services/apiClient.js';
 import { getServiceLabel } from '../data/mockData.js';
+import { formatKes } from '../utils/formatKes.js';
 
 export const NavBar = () => {
   const location = useLocation();
@@ -63,7 +64,7 @@ export const NavBar = () => {
 const CLIENT_TABS = [
   { id: 'browse', label: 'Browse Workers' },
   { id: 'invoices', label: 'Invoices' },
-  { id: 'payment', label: 'Payment' },
+  { id: 'payment', label: 'M-Pesa' },
   { id: 'chat', label: 'Chat' },
 ];
 
@@ -226,7 +227,7 @@ export const WorkerSummary = ({ worker }) => {
         Rate:{' '}
         {rate > 0 ? (
           <>
-            <strong>${rate.toFixed(2)}</strong> / hour
+            <strong>{formatKes(rate)}</strong> / hour
           </>
         ) : (
           <span className="muted">Add your hourly rate</span>

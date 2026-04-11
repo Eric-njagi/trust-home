@@ -1,6 +1,6 @@
 from datetime import date
 
-from pydantic import AliasChoices, BaseModel, ConfigDict, EmailStr, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 
 class UserOut(BaseModel):
@@ -19,10 +19,24 @@ class TokenResponse(BaseModel):
 
 
 class SignupBody(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     name: str = Field(min_length=1, max_length=255)
     email: EmailStr
     password: str = Field(min_length=6, max_length=128)
     role: str = Field(pattern="^(worker|client)$")
+    hourly_rate: float | None = Field(
+        default=None,
+        validation_alias=AliasChoices("hourly_rate", "hourlyRate"),
+        ge=0,
+    )
+
+    @model_validator(mode="after")
+    def worker_hourly_required(self) -> "SignupBody":
+        if self.role == "worker":
+            if self.hourly_rate is None or self.hourly_rate <= 0:
+                raise ValueError("Workers must provide an hourly rate in Kenyan Shillings (greater than 0).")
+        return self
 
 
 class LoginBody(BaseModel):
@@ -97,4 +111,16 @@ class InvoiceOut(BaseModel):
     amount: float
     date: str
     status: str
+
+
+class InvoiceMpesaPay(BaseModel):
+    """M-Pesa STK-style payment request (phone validated; settlement is app-managed)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    mpesa_phone: str = Field(
+        min_length=9,
+        max_length=20,
+        validation_alias=AliasChoices("mpesa_phone", "mpesaPhone"),
+    )
 

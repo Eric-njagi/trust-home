@@ -26,7 +26,10 @@ export const ClientDashboard = () => {
     <section className="page dashboard-page">
       <header className="page-header">
         <h2>Welcome, {user?.name || 'Client'}</h2>
-        <p>Browse and book workers, manage your invoices, and stay in touch.</p>
+        <p>
+          Find help near your estate or neighbourhood, settle invoices with M-Pesa, and
+          keep messages in one place.
+        </p>
       </header>
       <div className="dashboard-content">
         {activeTab === 'browse' && <WorkerBrowser workers={workers} onBooked={load} />}

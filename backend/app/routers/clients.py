@@ -1,16 +1,47 @@
+import re
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import require_client
 from app.models import Invoice, Job, User, WorkerProfile
-from app.schemas import BookingCreate, InvoiceOut, JobOut
+from app.schemas import BookingCreate, InvoiceMpesaPay, InvoiceOut, JobOut
 
 router = APIRouter()
+
+_KE_MSISDN = re.compile(r"^254[17]\d{8}$")
+
+
+def _normalize_ke_mpesa_phone(raw: str) -> str:
+    """Accept 07XXXXXXXX, 7XXXXXXXX, +2547XXXXXXXX, 2547XXXXXXXX."""
+    s = (raw or "").strip()
+    digits = "".join(ch for ch in s if ch.isdigit())
+    if not digits:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Enter the M-Pesa phone number you use on your handset.",
+        )
+    if digits.startswith("254") and len(digits) == 12:
+        normalized = digits
+    elif digits.startswith("0") and len(digits) == 10 and digits[1] in "17":
+        normalized = "254" + digits[1:]
+    elif len(digits) == 9 and digits[0] in "17":
+        normalized = "254" + digits
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Use a valid Kenyan number (e.g. 07XX XXX XXX or 011 XXX XXXX).",
+        )
+    if not _KE_MSISDN.match(normalized):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="M-Pesa payments require a Safaricom or Airtel Kenya mobile number in international format.",
+        )
+    return normalized
 
 
 def _invoice_out(inv: Invoice, db: Session) -> InvoiceOut:
@@ -95,7 +126,9 @@ def pay_invoice(
     invoice_id: UUID,
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[User, Depends(require_client)],
+    body: Annotated[InvoiceMpesaPay, Body()],
 ) -> InvoiceOut:
+    _normalize_ke_mpesa_phone(body.mpesa_phone)
     inv = db.get(Invoice, invoice_id)
     if not inv or inv.client_user_id != user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invoice not found")

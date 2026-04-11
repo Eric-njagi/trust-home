@@ -54,10 +54,12 @@ export const authApi = {
     setStoredToken(data.access_token);
     return data.user;
   },
-  signup: async ({ name, email, password, role }) => {
+  signup: async ({ name, email, password, role, hourlyRate }) => {
+    const body = { name, email, password, role };
+    if (role === 'worker' && hourlyRate != null) body.hourlyRate = hourlyRate;
     const data = await request('/api/auth/signup', {
       method: 'POST',
-      body: { name, email, password, role },
+      body,
       sendAuth: false,
     });
     setStoredToken(data.access_token);
@@ -95,8 +97,11 @@ export const clientApi = {
   createBooking: async (payload) => {
     return request('/api/clients/me/bookings', { method: 'POST', body: payload });
   },
-  payInvoice: async (invoiceId) => {
-    return request(`/api/clients/me/invoices/${invoiceId}/pay`, { method: 'PATCH' });
+  payInvoice: async (invoiceId, { mpesaPhone }) => {
+    return request(`/api/clients/me/invoices/${invoiceId}/pay`, {
+      method: 'PATCH',
+      body: { mpesaPhone },
+    });
   },
 };
 
