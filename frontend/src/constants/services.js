@@ -21,6 +21,11 @@ export const SERVICE_CATEGORIES = [
   { id: 'window_glass_cleaning', label: 'Windows & Glass' },
   { id: 'ironing_wardrobe', label: 'Ironing & Wardrobe Care' },
   { id: 'shopping_household_errands', label: 'Shopping & Household Errands' },
+  /* Common in Kenyan apartments, estates & rooftop setups */
+  { id: 'water_tank_cleaning', label: 'Water Tank & Jojo Cleaning' },
+  { id: 'compound_outdoor_cleaning', label: 'Compound, Veranda & Drains' },
+  { id: 'solar_panel_cleaning', label: 'Solar Panel Cleaning' },
+  { id: 'shared_estate_cleaning', label: 'Shared Estate & Staircase Cleaning' },
 ];
 
 /**
@@ -75,5 +80,17 @@ export const SERVICE_GROUPS = [
     title: 'Daily home support',
     subtitle: 'Windows, ironing, and running household errands',
     ids: ['window_glass_cleaning', 'ironing_wardrobe', 'shopping_household_errands'],
+  },
+  {
+    id: 'kenya_estate',
+    title: 'Tanks, compounds & shared estates',
+    subtitle:
+      'Rooftop tanks, outdoor areas, solar panels, and common spaces typical of Kenyan apartments and gated communities',
+    ids: [
+      'water_tank_cleaning',
+      'compound_outdoor_cleaning',
+      'solar_panel_cleaning',
+      'shared_estate_cleaning',
+    ],
   },
 ];

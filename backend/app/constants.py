@@ -19,6 +19,10 @@ SERVICE_LABELS: dict[str, str] = {
     "window_glass_cleaning": "Windows & Glass",
     "ironing_wardrobe": "Ironing & Wardrobe Care",
     "shopping_household_errands": "Shopping & Household Errands",
+    "water_tank_cleaning": "Water Tank & Jojo Cleaning",
+    "compound_outdoor_cleaning": "Compound, Veranda & Drains",
+    "solar_panel_cleaning": "Solar Panel Cleaning",
+    "shared_estate_cleaning": "Shared Estate & Staircase Cleaning",
 }
 
 
