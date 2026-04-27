@@ -1,5 +1,20 @@
 const TOKEN_KEY = 'trusthome_token';
 
+function getApiBaseUrl() {
+  // Vite injects env vars under import.meta.env.* at build time.
+  // Default: relative calls to same origin (works with dev proxy / reverse proxy).
+  const raw = import.meta?.env?.VITE_API_URL;
+  const base = typeof raw === 'string' ? raw.trim() : '';
+  return base ? base.replace(/\/+$/, '') : '';
+}
+
+function buildApiUrl(path) {
+  const base = getApiBaseUrl();
+  if (!base) return path;
+  if (!path) return base;
+  return path.startsWith('/') ? `${base}${path}` : `${base}/${path}`;
+}
+
 export function getStoredToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -17,7 +32,7 @@ async function request(path, { method = 'GET', body, sendAuth = true } = {}) {
     if (t) headers.Authorization = `Bearer ${t}`;
   }
 
-  const res = await fetch(path, {
+  const res = await fetch(buildApiUrl(path), {
     method,
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
