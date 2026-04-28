@@ -39,8 +39,10 @@ export const WorkerDashboard = () => {
   }, []);
 
   useEffect(() => {
-    loadJobs();
-  }, [loadJobs]);
+    if (activeTab === 'jobs') {
+      loadJobs();
+    }
+  }, [activeTab, loadJobs]);
 
   useEffect(() => {
     reloadProfile();

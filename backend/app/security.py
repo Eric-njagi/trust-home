@@ -11,10 +11,13 @@ load_dotenv()
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-only-change-me")
 JWT_ALG = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
+BCRYPT_ROUNDS = int(os.getenv("BCRYPT_ROUNDS", "10"))
 
 
 def hash_password(plain: str) -> str:
-    return bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    # Keep hashing secure but configurable so auth can be tuned for responsiveness.
+    rounds = max(4, min(BCRYPT_ROUNDS, 16))
+    return bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt(rounds=rounds)).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:

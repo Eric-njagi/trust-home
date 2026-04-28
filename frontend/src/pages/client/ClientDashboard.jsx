@@ -18,12 +18,8 @@ export const ClientDashboard = () => {
   const [invoices, setInvoices] = useState([]);
   const [jobs, setJobs] = useState([]);
 
-  const load = useCallback(async () => {
-    const [allWorkers, inv, j] = await Promise.all([
-      workerApi.listWorkers(),
-      clientApi.listInvoices(),
-      clientApi.listMyJobs(),
-    ]);
+  const loadWorkers = useCallback(async () => {
+    const allWorkers = await workerApi.listWorkers();
     if (user?.city) {
       const c = String(user.city).trim().toLowerCase();
       allWorkers.sort((a, b) => {
@@ -33,13 +29,35 @@ export const ClientDashboard = () => {
       });
     }
     setWorkers(allWorkers);
-    setInvoices(inv);
-    setJobs(j);
   }, [user?.city]);
 
+  const loadInvoices = useCallback(async () => {
+    const inv = await clientApi.listInvoices();
+    setInvoices(inv);
+  }, []);
+
+  const loadJobs = useCallback(async () => {
+    const j = await clientApi.listMyJobs();
+    setJobs(j);
+  }, []);
+
   useEffect(() => {
-    load();
-  }, [load]);
+    if (activeTab === 'browse') {
+      loadWorkers();
+    } else if (activeTab === 'jobs') {
+      loadJobs();
+    } else if (activeTab === 'invoices' || activeTab === 'payment') {
+      loadInvoices();
+    }
+  }, [activeTab, loadWorkers, loadInvoices, loadJobs]);
+
+  const refreshAfterBooking = useCallback(async () => {
+    await Promise.all([loadWorkers(), loadJobs()]);
+  }, [loadWorkers, loadJobs]);
+
+  const refreshAfterPayment = useCallback(async () => {
+    await loadInvoices();
+  }, [loadInvoices]);
 
   return (
     <section className="page dashboard-page">
@@ -51,10 +69,10 @@ export const ClientDashboard = () => {
         </p>
       </header>
       <div className="dashboard-content">
-        {activeTab === 'browse' && <WorkerBrowser workers={workers} onBooked={load} />}
+        {activeTab === 'browse' && <WorkerBrowser workers={workers} onBooked={refreshAfterBooking} />}
         {activeTab === 'jobs' && <ClientJobHistory jobs={jobs} />}
         {activeTab === 'invoices' && <InvoiceList invoices={invoices} />}
-        {activeTab === 'payment' && <PaymentPlaceholder invoices={invoices} onPaid={load} />}
+        {activeTab === 'payment' && <PaymentPlaceholder invoices={invoices} onPaid={refreshAfterPayment} />}
         {activeTab === 'chat' && <ChatWindow />}
       </div>
     </section>
