@@ -14,6 +14,7 @@ from app.schemas import BookingCreate, ClientJobOut, InvoiceMpesaPay, InvoiceOut
 router = APIRouter()
 
 _KE_MSISDN = re.compile(r"^254[17]\d{8}$")
+_MONTHLY_SERVICE_IDS = frozenset({"nanny", "childcare", "house_help_monthly"})
 
 
 def _normalize_ke_mpesa_phone(raw: str) -> str:
@@ -128,7 +129,11 @@ def create_booking(
         client_user_id=user.id,
         service_id=body.service_id,
         job_date=body.job_date,
-        time_window=body.time_window.strip(),
+        time_window=(
+            "Monthly recurring schedule"
+            if body.service_id in _MONTHLY_SERVICE_IDS
+            else body.time_window.strip()
+        ),
         status="pending",
     )
     db.add(job)

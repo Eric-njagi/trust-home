@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { SERVICE_CATEGORIES } from '../constants/services.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { chatApi } from '../services/apiClient.js';
+import { authApi, chatApi } from '../services/apiClient.js';
 import { getServiceLabel } from '../data/mockData.js';
 import { formatKes } from '../utils/formatKes.js';
 
@@ -66,6 +66,7 @@ const CLIENT_TABS = [
   { id: 'jobs', label: 'My Jobs' },
   { id: 'invoices', label: 'Invoices' },
   { id: 'payment', label: 'M-Pesa' },
+  { id: 'account', label: 'Account' },
   { id: 'chat', label: 'Chat' },
 ];
 
@@ -73,6 +74,7 @@ const WORKER_TABS = [
   { id: 'jobs', label: 'My Jobs' },
   { id: 'profile', label: 'Profile' },
   { id: 'availability', label: 'Availability' },
+  { id: 'account', label: 'Account' },
   { id: 'chat', label: 'Chat' },
 ];
 
@@ -292,6 +294,109 @@ export const WorkerSummary = ({ worker }) => {
         </span>
       </p>
       <RatingStars value={worker.rating} />
+    </div>
+  );
+};
+
+const digitsOnly = (value) => String(value || '').replace(/\D/g, '');
+
+export const AccountSettingsPanel = () => {
+  const { user, login } = useAuth();
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [city, setCity] = useState(user?.city || '');
+  const [phoneNumber, setPhoneNumber] = useState(digitsOnly(user?.phoneNumber || ''));
+  const [idNumber, setIdNumber] = useState(digitsOnly(user?.idNumber || ''));
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    setName(user?.name || '');
+    setEmail(user?.email || '');
+    setCity(user?.city || '');
+    setPhoneNumber(digitsOnly(user?.phoneNumber || ''));
+    setIdNumber(digitsOnly(user?.idNumber || ''));
+  }, [user]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setMessage('');
+    if (!/^\d{9,12}$/.test(phoneNumber)) {
+      setError('Phone number must be 9 to 12 digits.');
+      return;
+    }
+    if (!/^\d{7,8}$/.test(idNumber)) {
+      setError('National ID number must be 7 or 8 digits.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const updated = await authApi.updateMe({
+        name,
+        email,
+        city,
+        phoneNumber,
+        idNumber,
+      });
+      login(updated);
+      setMessage('Account details updated successfully.');
+    } catch (err) {
+      setError(err.message || 'Could not update account details.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="card">
+      <h3>Account settings</h3>
+      <form className="form compact" onSubmit={handleSubmit}>
+        <label>
+          Full name
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+        </label>
+        <label>
+          Email
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </label>
+        <label>
+          City / area
+          <input type="text" value={city} onChange={(e) => setCity(e.target.value)} required />
+        </label>
+        <label>
+          Phone number
+          <input
+            type="text"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(digitsOnly(e.target.value))}
+            inputMode="numeric"
+            pattern="[0-9]{9,12}"
+            minLength={9}
+            maxLength={12}
+            required
+          />
+        </label>
+        <label>
+          National ID number
+          <input
+            type="text"
+            value={idNumber}
+            onChange={(e) => setIdNumber(digitsOnly(e.target.value))}
+            inputMode="numeric"
+            pattern="[0-9]{7,8}"
+            minLength={7}
+            maxLength={8}
+            required
+          />
+        </label>
+        {error && <p className="error-text">{error}</p>}
+        {message && <p className="success-text">{message}</p>}
+        <button className="btn primary" type="submit" disabled={saving}>
+          {saving ? 'Saving…' : 'Save changes'}
+        </button>
+      </form>
     </div>
   );
 };

@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { workerApi } from '../../services/apiClient.js';
 import { WorkerAvailabilityToggle, WorkerJobList, WorkerProfilePanel } from '../../components/WorkerComponents.jsx';
-import { ChatWindow } from '../../components/CommonComponents.jsx';
+import { AccountSettingsPanel, ChatWindow } from '../../components/CommonComponents.jsx';
 
 function profileIncomplete(p) {
   if (!p || typeof p !== 'object') return false;
@@ -109,6 +109,7 @@ export const WorkerDashboard = () => {
             onToggle={handleToggleAvailability}
           />
         )}
+        {activeTab === 'account' && <AccountSettingsPanel />}
         {activeTab === 'chat' && <ChatWindow />}
       </div>
     </section>

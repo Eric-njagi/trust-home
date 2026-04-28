@@ -80,6 +80,12 @@ export const authApi = {
     setStoredToken(data.access_token);
     return data.user;
   },
+  updateMe: async ({ name, email, city, phoneNumber, idNumber }) => {
+    return request('/api/auth/me', {
+      method: 'PATCH',
+      body: { name, email, city, phoneNumber, idNumber },
+    });
+  },
 };
 
 export const workerApi = {

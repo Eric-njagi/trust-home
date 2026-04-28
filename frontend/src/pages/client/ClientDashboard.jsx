@@ -8,7 +8,7 @@ import {
   PaymentPlaceholder,
   ClientJobHistory,
 } from '../../components/ClientComponents.jsx';
-import { ChatWindow } from '../../components/CommonComponents.jsx';
+import { AccountSettingsPanel, ChatWindow } from '../../components/CommonComponents.jsx';
 
 export const ClientDashboard = () => {
   const { user } = useAuth();
@@ -73,6 +73,7 @@ export const ClientDashboard = () => {
         {activeTab === 'jobs' && <ClientJobHistory jobs={jobs} />}
         {activeTab === 'invoices' && <InvoiceList invoices={invoices} />}
         {activeTab === 'payment' && <PaymentPlaceholder invoices={invoices} onPaid={refreshAfterPayment} />}
+        {activeTab === 'account' && <AccountSettingsPanel />}
         {activeTab === 'chat' && <ChatWindow />}
       </div>
     </section>

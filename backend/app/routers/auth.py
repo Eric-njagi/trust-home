@@ -6,8 +6,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.deps import get_current_user
 from app.models import User, WorkerProfile
-from app.schemas import LoginBody, SignupBody, TokenResponse, UserOut
+from app.schemas import AccountUpdateBody, LoginBody, SignupBody, TokenResponse, UserOut
 from app.security import create_access_token, hash_password, verify_password
 
 router = APIRouter()
@@ -92,3 +93,32 @@ def login(body: LoginBody, db: Annotated[Session, Depends(get_db)]) -> TokenResp
 
     token = create_access_token(str(user.id), {"role": user.role})
     return TokenResponse(access_token=token, user=_user_out(user))
+
+
+@router.patch("/me", response_model=UserOut)
+def update_me(
+    body: AccountUpdateBody,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> UserOut:
+    next_email = body.email.lower().strip()
+    if next_email != user.email:
+        existing = db.scalar(select(User).where(User.email == next_email))
+        if existing and existing.id != user.id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+
+    normalized_id = _normalize_id_number(body.id_number)
+    if normalized_id != (user.id_number or ""):
+        existing_id = db.scalar(select(User).where(User.id_number == normalized_id))
+        if existing_id and existing_id.id != user.id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ID number already registered")
+
+    user.name = body.name.strip()
+    user.email = next_email
+    user.city = body.city.strip()
+    user.phone_number = _normalize_phone_number(body.phone_number)
+    user.id_number = normalized_id
+
+    db.commit()
+    db.refresh(user)
+    return _user_out(user)

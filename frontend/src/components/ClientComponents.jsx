@@ -4,6 +4,8 @@ import { clientApi } from '../services/apiClient.js';
 import { formatKes } from '../utils/formatKes.js';
 import { ServiceCategorySelect, WorkerSummary } from './CommonComponents.jsx';
 
+const MONTHLY_SERVICE_IDS = new Set(['nanny', 'childcare', 'house_help_monthly']);
+
 export const WorkerBrowser = ({ workers, onBooked }) => {
   const [serviceFilter, setServiceFilter] = useState('');
   const [selectedWorkerId, setSelectedWorkerId] = useState('');
@@ -31,10 +33,12 @@ export const WorkerBrowser = ({ workers, onBooked }) => {
   }, [selectedWorkerId, serviceFilter, workers]);
 
   const selectedWorker = workers.find((w) => w.id === selectedWorkerId);
+  const isMonthlyService = MONTHLY_SERVICE_IDS.has(bookingServiceId);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedWorkerId || !date || !time || !bookingServiceId) return;
+    if (!selectedWorkerId || !date || !bookingServiceId) return;
+    if (!isMonthlyService && !time.trim()) return;
     if (!selectedWorker?.services?.length) {
       setError('This worker has not listed any services yet.');
       return;
@@ -46,7 +50,7 @@ export const WorkerBrowser = ({ workers, onBooked }) => {
         workerId: selectedWorkerId,
         serviceId: bookingServiceId,
         jobDate: date,
-        timeWindow: time,
+        timeWindow: isMonthlyService ? 'Monthly recurring schedule' : time,
       });
       await onBooked?.();
       setDate('');
@@ -96,19 +100,25 @@ export const WorkerBrowser = ({ workers, onBooked }) => {
           </label>
         )}
         <label>
-          Date
+          {isMonthlyService ? 'Start date' : 'Date'}
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
         </label>
-        <label>
-          Time window
-          <input
-            type="text"
-            placeholder="e.g. 10:00 – 14:00 (EAT)"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            required
-          />
-        </label>
+        {!isMonthlyService ? (
+          <label>
+            Time window
+            <input
+              type="text"
+              placeholder="e.g. 10:00 – 14:00 (EAT)"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              required
+            />
+          </label>
+        ) : (
+          <p className="muted">
+            This service is booked as a monthly arrangement. The worker will see it as a monthly job.
+          </p>
+        )}
         {error && <p className="error-text">{error}</p>}
         <button
           className="btn primary"

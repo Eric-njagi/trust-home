@@ -69,6 +69,26 @@ class LoginBody(BaseModel):
     role: str = Field(pattern="^(worker|client)$")
 
 
+class AccountUpdateBody(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    name: str = Field(min_length=1, max_length=255)
+    email: EmailStr
+    city: str = Field(min_length=1, max_length=128)
+    phone_number: str = Field(
+        min_length=9,
+        max_length=20,
+        pattern=r"^\+?\d{9,20}$",
+        validation_alias=AliasChoices("phone_number", "phoneNumber"),
+    )
+    id_number: str = Field(
+        min_length=7,
+        max_length=8,
+        pattern=r"^\d{7,8}$",
+        validation_alias=AliasChoices("id_number", "idNumber"),
+    )
+
+
 class WorkerPublic(BaseModel):
     id: str
     name: str
