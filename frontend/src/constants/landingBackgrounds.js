@@ -6,20 +6,24 @@ import { SERVICE_GROUPS } from './services.js';
  */
 export const LANDING_BACKGROUND_BY_SECTION = {
   hero:
-    'https://images.unsplash.com/photo-1741991110666-88115e724741?auto=format&fit=crop&w=1920&q=85',
-  home: 'https://images.unsplash.com/photo-1582735689369-4fe89db7114c?auto=format&fit=crop&w=1920&q=85',
-  kitchen: 'https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1920&q=85',
-  family: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=1920&q=85',
+    'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=2200&q=85',
+  home: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=2200&q=85',
+  kitchen:
+    'https://images.unsplash.com/photo-1495521821757-a1efb6729352?auto=format&fit=crop&w=2200&q=85',
+  family:
+    'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?auto=format&fit=crop&w=2200&q=85',
   vehicle_fabrics:
-    'https://images.unsplash.com/photo-1520340351474-e39262d0d112?auto=format&fit=crop&w=1920&q=85',
+    'https://images.unsplash.com/photo-1769641156620-48f014424c4f?auto=format&fit=crop&w=2200&q=85',
   moves_decor:
-    'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1920&q=85',
-  pests: 'https://images.unsplash.com/photo-1630516908949-8bc994d8d48c?auto=format&fit=crop&w=1920&q=85',
-  outdoor: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=1920&q=85',
+    'https://images.unsplash.com/photo-1493666438817-866a91353ca9?auto=format&fit=crop&w=2200&q=85',
+  pests:
+    'https://images.unsplash.com/photo-1711900176167-eedaa6e7fdae?auto=format&fit=crop&w=2200&q=85',
+  outdoor:
+    'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=2200&q=85',
   daily_extras:
-    'https://images.unsplash.com/photo-1584622650111-993a426f6d8a?auto=format&fit=crop&w=1920&q=85',
+    'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=2200&q=85',
   kenya_estate:
-    'https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=1920&q=85',
+    'https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=2200&q=85',
 };
 
 export const LANDING_SCROLL_SECTION_ORDER = ['hero', ...SERVICE_GROUPS.map((g) => g.id)];

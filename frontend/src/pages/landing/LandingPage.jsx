@@ -34,12 +34,32 @@ const SERVICE_ICONS = {
 };
 
 const HERO_POINTS = [
-  'Vetted workers',
-  'Same-day & planned visits',
-  'Pay with M-Pesa',
-  'Ratings you can rely on',
+  'Verified domestic workers',
+  'Transparent pricing before booking',
+  'Same-day & scheduled visits',
+  'Secure payments with M-Pesa',
 ];
 
+const HERO_CHARACTER_CARDS = [
+  {
+    id: 'homeowner',
+    emoji: '👩🏾‍💼',
+    title: 'Busy homeowners',
+    copy: 'Get reliable help without long phone calls or guesswork.',
+  },
+  {
+    id: 'worker',
+    emoji: '🧑🏾‍🔧',
+    title: 'Trusted professionals',
+    copy: 'Profiles, ratings, and services are shown clearly before you book.',
+  },
+  {
+    id: 'family',
+    emoji: '👨🏾‍👩🏾‍👧🏾',
+    title: 'Safe family spaces',
+    copy: 'Support for homes, apartments, and gated communities across Kenya.',
+  },
+];
 const categoryById = Object.fromEntries(SERVICE_CATEGORIES.map((c) => [c.id, c]));
 
 export const LandingPage = () => {
@@ -60,7 +80,7 @@ export const LandingPage = () => {
             key={id}
             className={`landing-bg-slide ${activeSectionId === id ? 'is-active' : ''}`}
             style={{
-              backgroundImage: `linear-gradient(rgba(22, 28, 36, 0.48), rgba(22, 28, 36, 0.55)), url(${LANDING_BACKGROUND_BY_SECTION[id]})`,
+              backgroundImage: `linear-gradient(112deg, rgba(3, 10, 24, 0.78) 0%, rgba(3, 10, 24, 0.56) 42%, rgba(3, 10, 24, 0.76) 100%), radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 46%), url(${LANDING_BACKGROUND_BY_SECTION[id]})`,
             }}
           />
         ))}
@@ -78,8 +98,13 @@ export const LandingPage = () => {
                 <p className="hero-eyebrow">Kenya · Domestic services</p>
                 <h1 className="hero-title">
                   <span className="hero-title-brand">TrustHome</span>
+                  <span className="hero-title-tagline">
+                    Kenya&apos;s trusted home-service marketplace.
+                  </span>
                 </h1>
-                <p className="hero-subtitle">Trusted household help for urban Kenya.</p>
+                <p className="hero-subtitle">
+                  Book reliable workers for cleaning, childcare, cooking, errands, and more.
+                </p>
               </div>
               <div className="hero-col hero-col--detail">
                 <p className="hero-description">
@@ -88,12 +113,27 @@ export const LandingPage = () => {
                   book for cooking, cleaning, childcare, and more. Built for apartments, gated
                   communities, and estates where trust and punctuality matter.
                 </p>
+                <div className="hero-character-strip" aria-label="People served by TrustHome">
+                  {HERO_CHARACTER_CARDS.map((card) => (
+                    <article key={card.id} className="hero-character-card">
+                      <span className="hero-character-icon" aria-hidden="true">
+                        {card.emoji}
+                      </span>
+                      <div className="hero-character-copy">
+                        <p className="hero-character-title">{card.title}</p>
+                        <p className="hero-character-text">{card.copy}</p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
                 <ul className="hero-features hero-features--even" aria-label="Why TrustHome">
                   {HERO_POINTS.map((text) => (
                     <li key={text}>{text}</li>
                   ))}
                 </ul>
-                <p className="hero-cta">Browse by category below, then pick a service to continue</p>
+                <p className="hero-cta">
+                  Pick a category below and start booking in under 2 minutes.
+                </p>
                 {!user ? (
                   <div className="hero-auth-actions" aria-label="Authentication actions">
                     <button type="button" className="btn primary" onClick={() => navigate('/login')}>
