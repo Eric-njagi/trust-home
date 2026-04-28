@@ -5,6 +5,8 @@ import { getServiceLabel } from '../data/mockData.js';
 import { workerApi } from '../services/apiClient.js';
 import { WorkerSummary } from './CommonComponents.jsx';
 
+const digitsOnly = (value) => String(value || '').replace(/\D/g, '');
+
 export const WorkerAvailabilityToggle = ({ available, onToggle }) => {
   return (
     <div className="card availability-toggle">
@@ -339,12 +341,11 @@ export const WorkerProfilePanel = ({ profile, onProfileSaved, onRetry }) => {
                   KSh
                 </span>
                 <input
-                  type="number"
-                  min="0"
-                  step="1"
+                  type="text"
                   inputMode="numeric"
+                  pattern="[0-9]*"
                   value={hourlyRate}
-                  onChange={(e) => setHourlyRate(e.target.value)}
+                  onChange={(e) => setHourlyRate(digitsOnly(e.target.value))}
                   placeholder="0"
                   aria-describedby="rate-hint"
                 />

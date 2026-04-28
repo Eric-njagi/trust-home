@@ -134,32 +134,57 @@ export const RatingStars = ({ value }) => {
   );
 };
 
-export const ChatWindow = ({ initialMessagesRole }) => {
+export const ChatWindow = () => {
+  const { user } = useAuth();
   const [messages, setMessages] = useState([]);
+  const [contacts, setContacts] = useState([]);
+  const [selectedContactId, setSelectedContactId] = useState('');
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [chatError, setChatError] = useState('');
 
   useEffect(() => {
-    async function loadMessages() {
+    async function loadContacts() {
       try {
-        const data = await chatApi.listMessages();
+        const data = await chatApi.listContacts();
+        setContacts(data);
+        if (data.length > 0) {
+          setSelectedContactId((prev) => prev || data[0].id);
+        } else {
+          setSelectedContactId('');
+        }
+      } catch {
+        setContacts([]);
+        setSelectedContactId('');
+      }
+    }
+    loadContacts();
+  }, []);
+
+  useEffect(() => {
+    async function loadMessages() {
+      if (!selectedContactId) {
+        setMessages([]);
+        return;
+      }
+      try {
+        const data = await chatApi.listMessages({ peerUserId: selectedContactId });
         setMessages(data);
       } catch {
         setMessages([]);
       }
     }
     loadMessages();
-  }, []);
+  }, [selectedContactId]);
 
   const handleSend = async (e) => {
     e.preventDefault();
+    if (!selectedContactId) return;
     if (!input.trim() || sending) return;
-    const from = initialMessagesRole === 'worker' ? 'worker' : 'client';
     setSending(true);
     setChatError('');
     try {
-      const newMsg = await chatApi.sendMessage({ from, text: input.trim() });
+      const newMsg = await chatApi.sendMessage({ toUserId: selectedContactId, text: input.trim() });
       setMessages((prev) => [...prev, newMsg]);
       setInput('');
     } catch (err) {
@@ -172,6 +197,24 @@ export const ChatWindow = ({ initialMessagesRole }) => {
   return (
     <div className="card chat-window">
       <h3>Chat</h3>
+      <label className="field">
+        Chat with
+        <select
+          value={selectedContactId}
+          onChange={(e) => setSelectedContactId(e.target.value)}
+          disabled={contacts.length === 0}
+        >
+          {contacts.length === 0 ? (
+            <option value="">No contacts yet</option>
+          ) : (
+            contacts.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name} ({c.role})
+              </option>
+            ))
+          )}
+        </select>
+      </label>
       {chatError && (
         <p className="error-text" role="alert">
           {chatError}
@@ -181,10 +224,14 @@ export const ChatWindow = ({ initialMessagesRole }) => {
         {messages.map((m) => (
           <div
             key={m.id}
-            className={`chat-message ${m.from === 'worker' ? 'from-worker' : 'from-client'}`}
+            className={`chat-message ${m.from === 'worker' ? 'from-worker' : 'from-client'} ${
+              m.fromUserId === user?.id ? 'is-me' : ''
+            }`}
           >
             <div className="chat-meta">
-              <span className="chat-from">{m.from === 'worker' ? 'Worker' : 'Client'}</span>
+              <span className="chat-from">
+                {m.fromUserId === user?.id ? 'You' : m.from === 'worker' ? 'Worker' : 'Client'}
+              </span>
               <span className="chat-time">{m.timestamp}</span>
             </div>
             <p>{m.text}</p>
@@ -197,11 +244,15 @@ export const ChatWindow = ({ initialMessagesRole }) => {
           placeholder="Type a message…"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          disabled={sending}
+          disabled={sending || !selectedContactId}
           aria-busy={sending}
           maxLength={4000}
         />
-        <button type="submit" className="btn primary small" disabled={sending || !input.trim()}>
+        <button
+          type="submit"
+          className="btn primary small"
+          disabled={sending || !input.trim() || !selectedContactId}
+        >
           {sending ? 'Sending…' : 'Send'}
         </button>
       </form>

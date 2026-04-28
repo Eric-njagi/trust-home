@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { authApi } from '../../services/apiClient.js';
 
+const digitsOnly = (value) => String(value || '').replace(/\D/g, '');
+
 export const SignupPage = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -11,6 +13,7 @@ export const SignupPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [city, setCity] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [idNumber, setIdNumber] = useState('');
   const [role, setRole] = useState('worker');
   const [hourlyRate, setHourlyRate] = useState('');
@@ -21,6 +24,16 @@ export const SignupPage = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    if (!/^\d{7,8}$/.test(idNumber)) {
+      setError('National ID number must be 7 or 8 digits.');
+      setLoading(false);
+      return;
+    }
+    if (!/^\d{9,12}$/.test(phoneNumber)) {
+      setError('Phone number must be 9 to 12 digits.');
+      setLoading(false);
+      return;
+    }
     if (role === 'worker') {
       const rate = Number(hourlyRate);
       if (!Number.isFinite(rate) || rate <= 0) {
@@ -32,8 +45,8 @@ export const SignupPage = () => {
     try {
       const payload =
         role === 'worker'
-          ? { name, email, password, role, city, idNumber, hourlyRate: Number(hourlyRate) }
-          : { name, email, password, role, city, idNumber };
+          ? { name, email, password, role, city, phoneNumber, idNumber, hourlyRate: Number(hourlyRate) }
+          : { name, email, password, role, city, phoneNumber, idNumber };
       const user = await authApi.signup(payload);
       login(user);
       navigate(role === 'worker' ? '/worker' : '/client');
@@ -76,13 +89,31 @@ export const SignupPage = () => {
             />
           </label>
           <label>
+            Phone number
+            <input
+              type="text"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(digitsOnly(e.target.value))}
+              placeholder="e.g. 0712345678"
+              inputMode="numeric"
+              pattern="[0-9]{9,12}"
+              minLength={9}
+              maxLength={12}
+              autoComplete="tel"
+              required
+            />
+          </label>
+          <label>
             National ID number
             <input
               type="text"
               value={idNumber}
-              onChange={(e) => setIdNumber(e.target.value)}
-              placeholder="Enter your ID number"
+              onChange={(e) => setIdNumber(digitsOnly(e.target.value))}
+              placeholder="Enter 7 or 8 digits"
               inputMode="numeric"
+              pattern="[0-9]{7,8}"
+              minLength={7}
+              maxLength={8}
               autoComplete="off"
               required
             />
@@ -129,12 +160,11 @@ export const SignupPage = () => {
                   KSh
                 </span>
                 <input
-                  type="number"
-                  min="1"
-                  step="50"
+                  type="text"
                   inputMode="numeric"
+                  pattern="[0-9]*"
                   value={hourlyRate}
-                  onChange={(e) => setHourlyRate(e.target.value)}
+                  onChange={(e) => setHourlyRate(digitsOnly(e.target.value))}
                   placeholder="e.g. 450"
                   required
                   aria-describedby="signup-rate-hint"

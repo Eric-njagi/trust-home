@@ -69,8 +69,8 @@ export const authApi = {
     setStoredToken(data.access_token);
     return data.user;
   },
-  signup: async ({ name, email, password, role, hourlyRate }) => {
-    const body = { name, email, password, role };
+  signup: async ({ name, email, password, role, city, phoneNumber, idNumber, hourlyRate }) => {
+    const body = { name, email, password, role, city, phoneNumber, idNumber };
     if (role === 'worker' && hourlyRate != null) body.hourlyRate = hourlyRate;
     const data = await request('/api/auth/signup', {
       method: 'POST',
@@ -133,13 +133,19 @@ export const clientApi = {
 };
 
 export const chatApi = {
-  listMessages: async () => {
-    return request('/api/chat/messages');
+  listContacts: async () => {
+    return request('/api/chat/contacts');
   },
-  sendMessage: async ({ from, text }) => {
+  listMessages: async ({ peerUserId }) => {
+    const params = new URLSearchParams();
+    if (peerUserId) params.set('peerUserId', peerUserId);
+    const q = params.toString() ? `?${params.toString()}` : '';
+    return request(`/api/chat/messages${q}`);
+  },
+  sendMessage: async ({ toUserId, text }) => {
     return request('/api/chat/messages', {
       method: 'POST',
-      body: { from, text },
+      body: { toUserId, text },
     });
   },
 };

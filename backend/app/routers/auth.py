@@ -14,8 +14,14 @@ router = APIRouter()
 
 
 def _normalize_id_number(raw: str) -> str:
-    s = "".join(ch for ch in str(raw or "").strip() if ch.isalnum())
-    return s.upper()
+    return "".join(ch for ch in str(raw or "").strip() if ch.isdigit())
+
+
+def _normalize_phone_number(raw: str) -> str:
+    s = str(raw or "").strip()
+    if s.startswith("+"):
+        return "+" + "".join(ch for ch in s[1:] if ch.isdigit())
+    return "".join(ch for ch in s if ch.isdigit())
 
 
 def _user_out(user: User) -> UserOut:
@@ -25,6 +31,7 @@ def _user_out(user: User) -> UserOut:
         email=user.email,
         role=user.role,
         city=user.city or "",
+        phone_number=user.phone_number,
         id_number=user.id_number,
     )
 
@@ -46,6 +53,7 @@ def signup(body: SignupBody, db: Annotated[Session, Depends(get_db)]) -> TokenRe
         name=body.name.strip(),
         role=body.role,
         city=body.city.strip(),
+        phone_number=_normalize_phone_number(body.phone_number),
         id_number=normalized_id,
     )
     db.add(user)

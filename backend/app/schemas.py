@@ -9,6 +9,11 @@ class UserOut(BaseModel):
     email: EmailStr
     role: str
     city: str = ""
+    phone_number: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("phone_number", "phoneNumber"),
+        serialization_alias="phoneNumber",
+    )
     id_number: str | None = Field(
         default=None,
         validation_alias=AliasChoices("id_number", "idNumber"),
@@ -32,9 +37,16 @@ class SignupBody(BaseModel):
     password: str = Field(min_length=6, max_length=128)
     role: str = Field(pattern="^(worker|client)$")
     city: str = Field(min_length=1, max_length=128)
+    phone_number: str = Field(
+        min_length=9,
+        max_length=20,
+        pattern=r"^\+?\d{9,20}$",
+        validation_alias=AliasChoices("phone_number", "phoneNumber"),
+    )
     id_number: str = Field(
-        min_length=5,
-        max_length=64,
+        min_length=7,
+        max_length=8,
+        pattern=r"^\d{7,8}$",
         validation_alias=AliasChoices("id_number", "idNumber"),
     )
     hourly_rate: float | None = Field(

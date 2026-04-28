@@ -55,7 +55,7 @@ export const ClientDashboard = () => {
         {activeTab === 'jobs' && <ClientJobHistory jobs={jobs} />}
         {activeTab === 'invoices' && <InvoiceList invoices={invoices} />}
         {activeTab === 'payment' && <PaymentPlaceholder invoices={invoices} onPaid={load} />}
-        {activeTab === 'chat' && <ChatWindow initialMessagesRole="client" />}
+        {activeTab === 'chat' && <ChatWindow />}
       </div>
     </section>
   );

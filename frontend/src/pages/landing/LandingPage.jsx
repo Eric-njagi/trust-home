@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { SERVICE_CATEGORIES, SERVICE_GROUPS } from '../../constants/services.js';
 import {
   LANDING_BACKGROUND_BY_SECTION,
@@ -43,6 +44,7 @@ const categoryById = Object.fromEntries(SERVICE_CATEGORIES.map((c) => [c.id, c])
 
 export const LandingPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const activeSectionId = useLandingScrollBackground('hero');
 
   const handleServiceSelect = (serviceId) => {
@@ -92,6 +94,26 @@ export const LandingPage = () => {
                   ))}
                 </ul>
                 <p className="hero-cta">Browse by category below, then pick a service to continue</p>
+                {!user ? (
+                  <div className="hero-auth-actions" aria-label="Authentication actions">
+                    <button type="button" className="btn primary" onClick={() => navigate('/login')}>
+                      Sign In
+                    </button>
+                    <button type="button" className="btn ghost" onClick={() => navigate('/signup')}>
+                      Sign Up
+                    </button>
+                  </div>
+                ) : (
+                  <div className="hero-auth-actions" aria-label="Dashboard shortcut">
+                    <button
+                      type="button"
+                      className="btn primary"
+                      onClick={() => navigate(user.role === 'worker' ? '/worker' : '/client')}
+                    >
+                      Go to Dashboard
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

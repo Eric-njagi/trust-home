@@ -107,7 +107,7 @@ export const WorkerDashboard = () => {
             onToggle={handleToggleAvailability}
           />
         )}
-        {activeTab === 'chat' && <ChatWindow initialMessagesRole="worker" />}
+        {activeTab === 'chat' && <ChatWindow />}
       </div>
     </section>
   );

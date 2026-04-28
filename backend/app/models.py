@@ -17,6 +17,7 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(32), nullable=False)  # worker | client
     city: Mapped[str] = mapped_column(String(128), default="", nullable=False)
+    phone_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
     # Nullable for existing rows; enforced for new signups at the API layer + unique index in bootstrap.
     id_number: Mapped[str | None] = mapped_column(String(64), unique=True, index=True, nullable=True)
 
@@ -91,6 +92,9 @@ class ChatMessage(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     sender_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    recipient_user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     from_role: Mapped[str] = mapped_column(String(16), nullable=False)
