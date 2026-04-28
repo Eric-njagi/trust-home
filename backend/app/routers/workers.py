@@ -15,6 +15,7 @@ from app.payroll import compute_payroll_breakdown
 from app.schemas import JobCompleteBody, JobOut, JobStatusUpdate, WorkerProfileUpdate, WorkerPublic
 
 router = APIRouter()
+_MONTHLY_SERVICE_IDS = frozenset({"nanny", "childcare", "house_help_monthly"})
 
 
 def _worker_public(wp: WorkerProfile, display_name: str) -> WorkerPublic:
@@ -183,8 +184,37 @@ def complete_job(
     if job.status != "accepted":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only accepted jobs can be completed")
 
-    hours = Decimal(str(body.hours_worked))
-    breakdown = compute_payroll_breakdown(wp.hourly_rate or Decimal("0"), hours)
+    if job.service_id in _MONTHLY_SERVICE_IDS:
+        if body.monthly_amount is None or body.monthly_amount <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Monthly jobs require a monthly amount greater than 0.",
+            )
+        monthly_amount = Decimal(str(body.monthly_amount))
+        breakdown_json = {
+            "gross": float(monthly_amount),
+            "net": float(monthly_amount),
+            "hoursWorked": 0.0,
+            "effectiveHourlyRate": 0.0,
+            "deductions": [],
+            "totalDeductions": 0.0,
+            "serviceType": "monthly",
+            "disclaimer": "Monthly caregiver arrangement billed as a flat monthly amount.",
+        }
+        gross = monthly_amount
+        net = monthly_amount
+        hours = Decimal("0")
+    else:
+        if body.hours_worked is None or body.hours_worked <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Non-monthly jobs require hours worked greater than 0.",
+            )
+        hours = Decimal(str(body.hours_worked))
+        breakdown = compute_payroll_breakdown(wp.hourly_rate or Decimal("0"), hours)
+        breakdown_json = breakdown.to_json()
+        gross = Decimal(str(breakdown.gross))
+        net = Decimal(str(breakdown.net))
 
     job.status = "completed"
 
@@ -195,21 +225,21 @@ def complete_job(
             client_user_id=job.client_user_id,
             worker_profile_id=wp.id,
             service_label=service_label(job.service_id),
-            amount=Decimal(str(breakdown.net)),
-            gross_amount=Decimal(str(breakdown.gross)),
-            net_amount=Decimal(str(breakdown.net)),
-            hours_worked=Decimal(str(breakdown.hours_worked)),
-            deductions=breakdown.to_json(),
+            amount=net,
+            gross_amount=gross,
+            net_amount=net,
+            hours_worked=hours,
+            deductions=breakdown_json,
             invoice_date=date.today(),
             status="Unpaid",
         )
         db.add(inv)
     else:
-        inv.gross_amount = Decimal(str(breakdown.gross))
-        inv.net_amount = Decimal(str(breakdown.net))
-        inv.amount = Decimal(str(breakdown.net))
-        inv.hours_worked = Decimal(str(breakdown.hours_worked))
-        inv.deductions = breakdown.to_json()
+        inv.gross_amount = gross
+        inv.net_amount = net
+        inv.amount = net
+        inv.hours_worked = hours
+        inv.deductions = breakdown_json
         if inv.invoice_date is None:
             inv.invoice_date = date.today()
 

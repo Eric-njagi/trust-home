@@ -138,10 +138,16 @@ class JobStatusUpdate(BaseModel):
 
 
 class JobCompleteBody(BaseModel):
-    hours_worked: float = Field(
+    hours_worked: float | None = Field(
+        default=None,
         ge=0.25,
         le=24,
         validation_alias=AliasChoices("hours_worked", "hoursWorked"),
+    )
+    monthly_amount: float | None = Field(
+        default=None,
+        ge=1,
+        validation_alias=AliasChoices("monthly_amount", "monthlyAmount"),
     )
 
 

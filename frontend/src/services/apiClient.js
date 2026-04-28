@@ -112,10 +112,10 @@ export const workerApi = {
       body: { status },
     });
   },
-  completeJob: async (jobId, { hoursWorked }) => {
+  completeJob: async (jobId, { hoursWorked, monthlyAmount }) => {
     return request(`/api/workers/me/jobs/${jobId}/complete`, {
       method: 'PATCH',
-      body: { hoursWorked },
+      body: { hoursWorked, monthlyAmount },
     });
   },
 };

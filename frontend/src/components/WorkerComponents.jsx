@@ -6,6 +6,7 @@ import { workerApi } from '../services/apiClient.js';
 import { WorkerSummary } from './CommonComponents.jsx';
 
 const digitsOnly = (value) => String(value || '').replace(/\D/g, '');
+const MONTHLY_SERVICE_IDS = new Set(['nanny', 'childcare', 'house_help_monthly']);
 
 export const WorkerAvailabilityToggle = ({ available, onToggle }) => {
   return (
@@ -44,18 +45,21 @@ export const WorkerJobList = ({ jobs, onJobsChange }) => {
     }
   };
 
-  const handleComplete = async (jobId) => {
-    const raw = prompt('Hours worked for this job (e.g. 3):', '3');
+  const handleComplete = async (jobId, serviceId) => {
+    const isMonthly = MONTHLY_SERVICE_IDS.has(serviceId);
+    const raw = isMonthly
+      ? prompt('Monthly amount in KSh for this job (e.g. 35000):', '35000')
+      : prompt('Hours worked for this job (e.g. 3):', '3');
     if (raw == null) return;
-    const hoursWorked = Number(String(raw).trim());
-    if (!Number.isFinite(hoursWorked) || hoursWorked <= 0) {
-      alert('Enter a valid number of hours worked.');
+    const amount = Number(String(raw).trim());
+    if (!Number.isFinite(amount) || amount <= 0) {
+      alert(isMonthly ? 'Enter a valid monthly amount.' : 'Enter a valid number of hours worked.');
       return;
     }
     setBusyId(jobId);
     setError('');
     try {
-      await workerApi.completeJob(jobId, { hoursWorked });
+      await workerApi.completeJob(jobId, isMonthly ? { monthlyAmount: amount } : { hoursWorked: amount });
       await onJobsChange?.();
     } catch (err) {
       setError(err.message || 'Could not complete job');
@@ -111,7 +115,7 @@ export const WorkerJobList = ({ jobs, onJobsChange }) => {
                     type="button"
                     className="btn small primary"
                     disabled={busyId === job.id}
-                    onClick={() => handleComplete(job.id)}
+                    onClick={() => handleComplete(job.id, job.service)}
                   >
                     Mark completed
                   </button>
