@@ -122,6 +122,31 @@ export const WorkerBrowser = ({ workers, onBooked }) => {
   );
 };
 
+export const ClientJobHistory = ({ jobs }) => {
+  return (
+    <div className="card job-list client-job-list">
+      <h3>Your job history</h3>
+      {jobs.length === 0 && <p className="muted">No bookings yet.</p>}
+      <ul>
+        {jobs.map((job) => (
+          <li key={job.id} className="job-item">
+            <div className="job-main">
+              <h4>{job.workerName}</h4>
+              <p>{getServiceLabel(job.service)}</p>
+              <p className="muted">
+                {job.date} • {job.time}
+              </p>
+            </div>
+            <div className="job-actions">
+              <span className={`status badge ${job.status}`}>{job.status}</span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
 export const InvoiceList = ({ invoices }) => {
   return (
     <div className="card invoice-list">
@@ -135,6 +160,25 @@ export const InvoiceList = ({ invoices }) => {
               <p className="muted">
                 {inv.workerName} • {inv.date}
               </p>
+              {inv?.deductions?.gross != null && (
+                <p className="muted">
+                  Gross: {formatKes(inv.deductions.gross)} • Deductions:{' '}
+                  {formatKes(inv.deductions.totalDeductions)} • Net: {formatKes(inv.deductions.net)}
+                </p>
+              )}
+              {Array.isArray(inv?.deductions?.deductions) && inv.deductions.deductions.length > 0 && (
+                <details>
+                  <summary className="muted">Statutory deductions breakdown</summary>
+                  <ul className="muted">
+                    {inv.deductions.deductions.map((d) => (
+                      <li key={d.code}>
+                        <strong>{d.name}</strong> — {formatKes(d.amount)} (pay to {d.pay_to})
+                      </li>
+                    ))}
+                  </ul>
+                  {inv.deductions.disclaimer && <p className="muted">{inv.deductions.disclaimer}</p>}
+                </details>
+              )}
             </div>
             <div className="invoice-meta">
               <span className="amount">{formatKes(inv.amount)}</span>

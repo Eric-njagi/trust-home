@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import require_client
 from app.models import Invoice, Job, User, WorkerProfile
-from app.schemas import BookingCreate, InvoiceMpesaPay, InvoiceOut, JobOut
+from app.schemas import BookingCreate, ClientJobOut, InvoiceMpesaPay, InvoiceOut, JobOut
 
 router = APIRouter()
 
@@ -54,6 +54,10 @@ def _invoice_out(inv: Invoice, db: Session) -> InvoiceOut:
         workerName=worker_user.name if worker_user else "",
         service=inv.service_label,
         amount=float(inv.amount),
+        gross=float(inv.gross_amount or 0),
+        net=float(inv.net_amount or 0),
+        hoursWorked=float(inv.hours_worked or 0),
+        deductions=inv.deductions or {},
         date=inv.invoice_date.isoformat(),
         status=inv.status,
     )
@@ -64,6 +68,18 @@ def _job_out(job: Job, worker_profile_id: UUID, client_name: str) -> JobOut:
         id=str(job.id),
         workerId=str(worker_profile_id),
         clientName=client_name,
+        service=job.service_id,
+        date=job.job_date.isoformat(),
+        time=job.time_window,
+        status=job.status,
+    )
+
+
+def _client_job_out(job: Job, worker_profile_id: UUID, worker_name: str) -> ClientJobOut:
+    return ClientJobOut(
+        id=str(job.id),
+        workerId=str(worker_profile_id),
+        workerName=worker_name,
         service=job.service_id,
         date=job.job_date.isoformat(),
         time=job.time_window,
@@ -119,6 +135,24 @@ def create_booking(
     db.commit()
     db.refresh(job)
     return _job_out(job, wp.id, user.name)
+
+
+@router.get("/me/jobs", response_model=list[ClientJobOut])
+def my_jobs(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_client)],
+) -> list[ClientJobOut]:
+    jobs = (
+        db.execute(select(Job).where(Job.client_user_id == user.id).order_by(Job.job_date.desc()))
+        .scalars()
+        .all()
+    )
+    out: list[ClientJobOut] = []
+    for job in jobs:
+        wp = db.get(WorkerProfile, job.worker_profile_id)
+        worker_user = db.get(User, wp.user_id) if wp else None
+        out.append(_client_job_out(job, job.worker_profile_id, worker_user.name if worker_user else "Worker"))
+    return out
 
 
 @router.patch("/me/invoices/{invoice_id}/pay", response_model=InvoiceOut)

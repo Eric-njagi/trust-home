@@ -10,6 +10,8 @@ export const SignupPage = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [city, setCity] = useState('');
+  const [idNumber, setIdNumber] = useState('');
   const [role, setRole] = useState('worker');
   const [hourlyRate, setHourlyRate] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,8 +32,8 @@ export const SignupPage = () => {
     try {
       const payload =
         role === 'worker'
-          ? { name, email, password, role, hourlyRate: Number(hourlyRate) }
-          : { name, email, password, role };
+          ? { name, email, password, role, city, idNumber, hourlyRate: Number(hourlyRate) }
+          : { name, email, password, role, city, idNumber };
       const user = await authApi.signup(payload);
       login(user);
       navigate(role === 'worker' ? '/worker' : '/client');
@@ -59,6 +61,29 @@ export const SignupPage = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoComplete="name"
+              required
+            />
+          </label>
+          <label>
+            City / area
+            <input
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="e.g. Nairobi (Kilimani)"
+              autoComplete="address-level2"
+              required
+            />
+          </label>
+          <label>
+            National ID number
+            <input
+              type="text"
+              value={idNumber}
+              onChange={(e) => setIdNumber(e.target.value)}
+              placeholder="Enter your ID number"
+              inputMode="numeric"
+              autoComplete="off"
               required
             />
           </label>

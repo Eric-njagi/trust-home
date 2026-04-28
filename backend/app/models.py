@@ -16,6 +16,9 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(32), nullable=False)  # worker | client
+    city: Mapped[str] = mapped_column(String(128), default="", nullable=False)
+    # Nullable for existing rows; enforced for new signups at the API layer + unique index in bootstrap.
+    id_number: Mapped[str | None] = mapped_column(String(64), unique=True, index=True, nullable=True)
 
     worker_profile: Mapped["WorkerProfile | None"] = relationship(
         "WorkerProfile", back_populates="user", uselist=False
@@ -73,6 +76,10 @@ class Invoice(Base):
     )
     service_label: Mapped[str] = mapped_column(String(255), nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    gross_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0"))
+    net_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0"))
+    hours_worked: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0"))
+    deductions: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
     invoice_date: Mapped[date] = mapped_column(Date, nullable=False)
     status: Mapped[str] = mapped_column(String(32), default="Unpaid", nullable=False)
 

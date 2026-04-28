@@ -42,6 +42,26 @@ export const WorkerJobList = ({ jobs, onJobsChange }) => {
     }
   };
 
+  const handleComplete = async (jobId) => {
+    const raw = prompt('Hours worked for this job (e.g. 3):', '3');
+    if (raw == null) return;
+    const hoursWorked = Number(String(raw).trim());
+    if (!Number.isFinite(hoursWorked) || hoursWorked <= 0) {
+      alert('Enter a valid number of hours worked.');
+      return;
+    }
+    setBusyId(jobId);
+    setError('');
+    try {
+      await workerApi.completeJob(jobId, { hoursWorked });
+      await onJobsChange?.();
+    } catch (err) {
+      setError(err.message || 'Could not complete job');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   return (
     <div className="card job-list">
       <h3>Your jobs</h3>
@@ -80,6 +100,18 @@ export const WorkerJobList = ({ jobs, onJobsChange }) => {
                     onClick={() => handleStatus(job.id, 'rejected')}
                   >
                     Reject
+                  </button>
+                </div>
+              )}
+              {job.status === 'accepted' && (
+                <div className="job-buttons">
+                  <button
+                    type="button"
+                    className="btn small primary"
+                    disabled={busyId === job.id}
+                    onClick={() => handleComplete(job.id)}
+                  >
+                    Mark completed
                   </button>
                 </div>
               )}

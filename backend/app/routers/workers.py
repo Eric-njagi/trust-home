@@ -11,7 +11,8 @@ from app.constants import ALLOWED_SERVICE_IDS, service_label
 from app.database import get_db
 from app.deps import get_worker_profile, require_worker
 from app.models import Invoice, Job, User, WorkerProfile
-from app.schemas import JobOut, JobStatusUpdate, WorkerProfileUpdate, WorkerPublic
+from app.payroll import compute_payroll_breakdown
+from app.schemas import JobCompleteBody, JobOut, JobStatusUpdate, WorkerProfileUpdate, WorkerPublic
 
 router = APIRouter()
 
@@ -44,13 +45,17 @@ def _job_out(job: Job, worker_profile_id: UUID, client_name: str) -> JobOut:
 def list_workers(
     db: Annotated[Session, Depends(get_db)],
     service_id: Annotated[str | None, Query(alias="serviceId")] = None,
+    city: str | None = None,
 ) -> list[WorkerPublic]:
     q = select(WorkerProfile, User).join(User, WorkerProfile.user_id == User.id).where(User.role == "worker")
     rows = db.execute(q).all()
     out: list[WorkerPublic] = []
+    city_norm = (city or "").strip().lower()
     for wp, user in rows:
         svc = list(wp.services or [])
         if service_id and service_id not in svc:
+            continue
+        if city_norm and (wp.city or "").strip().lower() != city_norm:
             continue
         out.append(_worker_public(wp, user.name))
     return out
@@ -100,7 +105,9 @@ def update_my_worker_profile(
     if body.name is not None:
         user.name = body.name.strip()
     if body.city is not None:
-        wp.city = body.city.strip()
+        city = body.city.strip()
+        wp.city = city
+        user.city = city
     if body.hourly_rate is not None:
         wp.hourly_rate = Decimal(str(body.hourly_rate))
     if body.services is not None:
@@ -154,22 +161,57 @@ def update_job_status(
 
     if body.status == "accepted":
         job.status = "accepted"
-        hours = Decimal("3")
-        amount = (wp.hourly_rate or Decimal("0")) * hours
-        if amount <= 0:
-            amount = Decimal("1500")
+    else:
+        job.status = "rejected"
+
+    db.commit()
+    db.refresh(job)
+    client = db.get(User, job.client_user_id)
+    return _job_out(job, wp.id, client.name if client else "Client")
+
+
+@router.patch("/me/jobs/{job_id}/complete", response_model=JobOut)
+def complete_job(
+    job_id: UUID,
+    body: JobCompleteBody,
+    db: Annotated[Session, Depends(get_db)],
+    wp: Annotated[WorkerProfile, Depends(get_worker_profile)],
+) -> JobOut:
+    job = db.get(Job, job_id)
+    if not job or job.worker_profile_id != wp.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+    if job.status != "accepted":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only accepted jobs can be completed")
+
+    hours = Decimal(str(body.hours_worked))
+    breakdown = compute_payroll_breakdown(wp.hourly_rate or Decimal("0"), hours)
+
+    job.status = "completed"
+
+    inv = db.scalar(select(Invoice).where(Invoice.job_id == job.id))
+    if not inv:
         inv = Invoice(
             job_id=job.id,
             client_user_id=job.client_user_id,
             worker_profile_id=wp.id,
             service_label=service_label(job.service_id),
-            amount=amount,
+            amount=Decimal(str(breakdown.net)),
+            gross_amount=Decimal(str(breakdown.gross)),
+            net_amount=Decimal(str(breakdown.net)),
+            hours_worked=Decimal(str(breakdown.hours_worked)),
+            deductions=breakdown.to_json(),
             invoice_date=date.today(),
             status="Unpaid",
         )
         db.add(inv)
     else:
-        job.status = "rejected"
+        inv.gross_amount = Decimal(str(breakdown.gross))
+        inv.net_amount = Decimal(str(breakdown.net))
+        inv.amount = Decimal(str(breakdown.net))
+        inv.hours_worked = Decimal(str(breakdown.hours_worked))
+        inv.deductions = breakdown.to_json()
+        if inv.invoice_date is None:
+            inv.invoice_date = date.today()
 
     db.commit()
     db.refresh(job)

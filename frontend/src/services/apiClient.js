@@ -84,8 +84,11 @@ export const authApi = {
 
 export const workerApi = {
   listWorkers: async (filters = {}) => {
-    const { serviceId } = filters;
-    const q = serviceId ? `?serviceId=${encodeURIComponent(serviceId)}` : '';
+    const { serviceId, city } = filters;
+    const params = new URLSearchParams();
+    if (serviceId) params.set('serviceId', serviceId);
+    if (city) params.set('city', city);
+    const q = params.toString() ? `?${params.toString()}` : '';
     return request(`/api/workers${q}`);
   },
   getMyJobs: async () => {
@@ -103,11 +106,20 @@ export const workerApi = {
       body: { status },
     });
   },
+  completeJob: async (jobId, { hoursWorked }) => {
+    return request(`/api/workers/me/jobs/${jobId}/complete`, {
+      method: 'PATCH',
+      body: { hoursWorked },
+    });
+  },
 };
 
 export const clientApi = {
   listInvoices: async () => {
     return request('/api/clients/me/invoices');
+  },
+  listMyJobs: async () => {
+    return request('/api/clients/me/jobs');
   },
   createBooking: async (payload) => {
     return request('/api/clients/me/bookings', { method: 'POST', body: payload });

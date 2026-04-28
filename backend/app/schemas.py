@@ -8,6 +8,12 @@ class UserOut(BaseModel):
     name: str
     email: EmailStr
     role: str
+    city: str = ""
+    id_number: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("id_number", "idNumber"),
+        serialization_alias="idNumber",
+    )
 
     model_config = {"from_attributes": True}
 
@@ -25,6 +31,12 @@ class SignupBody(BaseModel):
     email: EmailStr
     password: str = Field(min_length=6, max_length=128)
     role: str = Field(pattern="^(worker|client)$")
+    city: str = Field(min_length=1, max_length=128)
+    id_number: str = Field(
+        min_length=5,
+        max_length=64,
+        validation_alias=AliasChoices("id_number", "idNumber"),
+    )
     hourly_rate: float | None = Field(
         default=None,
         validation_alias=AliasChoices("hourly_rate", "hourlyRate"),
@@ -65,6 +77,16 @@ class JobOut(BaseModel):
     status: str
 
 
+class ClientJobOut(BaseModel):
+    id: str
+    workerId: str
+    workerName: str
+    service: str
+    date: str
+    time: str
+    status: str
+
+
 class WorkerProfileUpdate(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -81,6 +103,14 @@ class WorkerProfileUpdate(BaseModel):
 
 class JobStatusUpdate(BaseModel):
     status: str = Field(pattern="^(accepted|rejected)$")
+
+
+class JobCompleteBody(BaseModel):
+    hours_worked: float = Field(
+        ge=0.25,
+        le=24,
+        validation_alias=AliasChoices("hours_worked", "hoursWorked"),
+    )
 
 
 class BookingCreate(BaseModel):
@@ -109,6 +139,10 @@ class InvoiceOut(BaseModel):
     workerName: str
     service: str
     amount: float
+    gross: float | None = None
+    net: float | None = None
+    hoursWorked: float | None = None
+    deductions: dict | None = None
     date: str
     status: str
 

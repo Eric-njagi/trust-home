@@ -63,6 +63,7 @@ export const NavBar = () => {
 
 const CLIENT_TABS = [
   { id: 'browse', label: 'Browse Workers' },
+  { id: 'jobs', label: 'My Jobs' },
   { id: 'invoices', label: 'Invoices' },
   { id: 'payment', label: 'M-Pesa' },
   { id: 'chat', label: 'Chat' },

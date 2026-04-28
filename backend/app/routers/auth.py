@@ -13,8 +13,20 @@ from app.security import create_access_token, hash_password, verify_password
 router = APIRouter()
 
 
+def _normalize_id_number(raw: str) -> str:
+    s = "".join(ch for ch in str(raw or "").strip() if ch.isalnum())
+    return s.upper()
+
+
 def _user_out(user: User) -> UserOut:
-    return UserOut(id=str(user.id), name=user.name, email=user.email, role=user.role)
+    return UserOut(
+        id=str(user.id),
+        name=user.name,
+        email=user.email,
+        role=user.role,
+        city=user.city or "",
+        id_number=user.id_number,
+    )
 
 
 @router.post("/signup", response_model=TokenResponse)
@@ -23,11 +35,18 @@ def signup(body: SignupBody, db: Annotated[Session, Depends(get_db)]) -> TokenRe
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
 
+    normalized_id = _normalize_id_number(body.id_number)
+    existing_id = db.scalar(select(User).where(User.id_number == normalized_id))
+    if existing_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ID number already registered")
+
     user = User(
         email=body.email.lower().strip(),
         hashed_password=hash_password(body.password),
         name=body.name.strip(),
         role=body.role,
+        city=body.city.strip(),
+        id_number=normalized_id,
     )
     db.add(user)
     db.flush()
@@ -37,7 +56,7 @@ def signup(body: SignupBody, db: Annotated[Session, Depends(get_db)]) -> TokenRe
         db.add(
             WorkerProfile(
                 user_id=user.id,
-                city="",
+                city=body.city.strip(),
                 hourly_rate=rate,
                 available=True,
                 rating_avg=0,

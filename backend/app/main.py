@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import Base, engine
+from app.db_bootstrap import ensure_schema
 from app.routers import auth, chat, clients, workers
 
 
@@ -12,6 +13,7 @@ async def lifespan(_app: FastAPI):
     import app.models  # noqa: F401 — register models with Base.metadata
 
     Base.metadata.create_all(bind=engine)
+    ensure_schema()
     yield
 
 
