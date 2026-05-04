@@ -45,6 +45,26 @@ export const WorkerJobList = ({ jobs, onJobsChange }) => {
     }
   };
 
+  const handleRateClient = async (jobId) => {
+    const raw = prompt('Rate this client from 1 to 5:', '5');
+    if (raw == null) return;
+    const rating = Number(String(raw).trim());
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      alert('Enter a whole number from 1 to 5.');
+      return;
+    }
+    setBusyId(jobId);
+    setError('');
+    try {
+      await workerApi.rateClient(jobId, rating);
+      await onJobsChange?.();
+    } catch (err) {
+      setError(err.message || 'Could not submit rating');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const handleComplete = async (jobId, serviceId) => {
     const isMonthly = MONTHLY_SERVICE_IDS.has(serviceId);
     const raw = isMonthly
@@ -119,6 +139,23 @@ export const WorkerJobList = ({ jobs, onJobsChange }) => {
                   >
                     Mark completed
                   </button>
+                </div>
+              )}
+              {job.status === 'completed' && (
+                <div className="job-buttons">
+                  {job.canWorkerRate ? (
+                    <button
+                      type="button"
+                      className="btn small primary"
+                      disabled={busyId === job.id}
+                      onClick={() => handleRateClient(job.id)}
+                    >
+                      {busyId === job.id ? 'Submitting…' : 'Rate client'}
+                    </button>
+                  ) : (
+                    <p className="muted">Your rating: {job.workerRating}/5</p>
+                  )}
+                  {job.clientRating != null && <p className="muted">Client rated you: {job.clientRating}/5</p>}
                 </div>
               )}
             </div>

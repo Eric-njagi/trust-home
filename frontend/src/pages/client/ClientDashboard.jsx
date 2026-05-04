@@ -8,7 +8,7 @@ import {
   PaymentPlaceholder,
   ClientJobHistory,
 } from '../../components/ClientComponents.jsx';
-import { AccountSettingsPanel, ChatWindow } from '../../components/CommonComponents.jsx';
+import { AccountSettingsPanel, ChatWindow, LegalDocumentsPanel } from '../../components/CommonComponents.jsx';
 
 export const ClientDashboard = () => {
   const { user } = useAuth();
@@ -70,7 +70,8 @@ export const ClientDashboard = () => {
       </header>
       <div className="dashboard-content">
         {activeTab === 'browse' && <WorkerBrowser workers={workers} onBooked={refreshAfterBooking} />}
-        {activeTab === 'jobs' && <ClientJobHistory jobs={jobs} />}
+        {activeTab === 'jobs' && <ClientJobHistory jobs={jobs} onJobsChange={loadJobs} />}
+        {activeTab === 'documents' && <LegalDocumentsPanel />}
         {activeTab === 'invoices' && <InvoiceList invoices={invoices} />}
         {activeTab === 'payment' && <PaymentPlaceholder invoices={invoices} onPaid={refreshAfterPayment} />}
         {activeTab === 'account' && <AccountSettingsPanel />}

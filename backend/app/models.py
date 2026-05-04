@@ -57,6 +57,8 @@ class Job(Base):
     job_date: Mapped[date] = mapped_column(Date, nullable=False)
     time_window: Mapped[str] = mapped_column(String(128), nullable=False)
     status: Mapped[str] = mapped_column(String(32), default="pending", nullable=False)
+    client_to_worker_rating: Mapped[int | None] = mapped_column(nullable=True)
+    worker_to_client_rating: Mapped[int | None] = mapped_column(nullable=True)
 
     worker: Mapped["WorkerProfile"] = relationship("WorkerProfile", back_populates="jobs")
     invoice: Mapped["Invoice | None"] = relationship("Invoice", back_populates="job", uselist=False)
@@ -99,4 +101,20 @@ class ChatMessage(Base):
     )
     from_role: Mapped[str] = mapped_column(String(16), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class LegalDocument(Base):
+    __tablename__ = "legal_documents"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    recipient_user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    document_type: Mapped[str] = mapped_column(String(32), nullable=False)  # contract | invoice
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    html_body: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

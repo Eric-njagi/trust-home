@@ -118,6 +118,15 @@ export const workerApi = {
       body: { hoursWorked, monthlyAmount },
     });
   },
+  rateClient: async (jobId, rating) => {
+    return request(`/api/workers/me/jobs/${jobId}/rate-client`, {
+      method: 'PATCH',
+      body: { rating },
+    });
+  },
+  listDocuments: async () => {
+    return request('/api/workers/me/documents');
+  },
 };
 
 export const clientApi = {
@@ -129,6 +138,15 @@ export const clientApi = {
   },
   createBooking: async (payload) => {
     return request('/api/clients/me/bookings', { method: 'POST', body: payload });
+  },
+  rateWorker: async (jobId, rating) => {
+    return request(`/api/clients/me/jobs/${jobId}/rate-worker`, {
+      method: 'PATCH',
+      body: { rating },
+    });
+  },
+  listDocuments: async () => {
+    return request('/api/clients/me/documents');
   },
   payInvoice: async (invoiceId, { mpesaPhone }) => {
     return request(`/api/clients/me/invoices/${invoiceId}/pay`, {

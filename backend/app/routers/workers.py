@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Annotated
 from uuid import UUID
@@ -10,9 +10,18 @@ from sqlalchemy.orm import Session
 from app.constants import ALLOWED_SERVICE_IDS, service_label
 from app.database import get_db
 from app.deps import get_worker_profile, require_worker
-from app.models import Invoice, Job, User, WorkerProfile
+from app.legal_docs import build_invoice_html
+from app.models import Invoice, Job, LegalDocument, User, WorkerProfile
 from app.payroll import compute_payroll_breakdown
-from app.schemas import JobCompleteBody, JobOut, JobStatusUpdate, WorkerProfileUpdate, WorkerPublic
+from app.schemas import (
+    JobCompleteBody,
+    JobOut,
+    JobRatingBody,
+    JobStatusUpdate,
+    LegalDocumentOut,
+    WorkerProfileUpdate,
+    WorkerPublic,
+)
 
 router = APIRouter()
 _MONTHLY_SERVICE_IDS = frozenset({"nanny", "childcare", "house_help_monthly"})
@@ -39,6 +48,66 @@ def _job_out(job: Job, worker_profile_id: UUID, client_name: str) -> JobOut:
         date=job.job_date.isoformat(),
         time=job.time_window,
         status=job.status,
+        clientRating=job.client_to_worker_rating,
+        workerRating=job.worker_to_client_rating,
+        canClientRate=job.status == "completed" and job.client_to_worker_rating is None,
+        canWorkerRate=job.status == "completed" and job.worker_to_client_rating is None,
+    )
+
+
+def _legal_document_out(doc: LegalDocument) -> LegalDocumentOut:
+    return LegalDocumentOut(
+        id=str(doc.id),
+        jobId=str(doc.job_id),
+        documentType=doc.document_type,
+        title=doc.title,
+        html=doc.html_body,
+        createdAt=doc.created_at.isoformat(),
+    )
+
+
+def _create_invoice_documents(
+    db: Session,
+    *,
+    job: Job,
+    client: User,
+    worker: User,
+    invoice: Invoice,
+) -> None:
+    invoice_number = f"TH-INV-{str(invoice.id)[:8].upper()}"
+    title = f"Official Invoice {invoice_number}"
+    html = build_invoice_html(
+        invoice_number=invoice_number,
+        invoice_date=invoice.invoice_date.isoformat(),
+        service_label=invoice.service_label,
+        job_date=job.job_date.isoformat(),
+        client_name=client.name,
+        worker_name=worker.name,
+        gross=float(invoice.gross_amount or 0),
+        net=float(invoice.net_amount or 0),
+        hours_worked=float(invoice.hours_worked or 0),
+        deductions_payload=invoice.deductions or {},
+    )
+    created_at = datetime.now(timezone.utc)
+    db.add(
+        LegalDocument(
+            recipient_user_id=client.id,
+            job_id=job.id,
+            document_type="invoice",
+            title=title,
+            html_body=html,
+            created_at=created_at,
+        )
+    )
+    db.add(
+        LegalDocument(
+            recipient_user_id=worker.id,
+            job_id=job.id,
+            document_type="invoice",
+            title=title,
+            html_body=html,
+            created_at=created_at,
+        )
     )
 
 
@@ -147,6 +216,23 @@ def my_jobs(
     return out
 
 
+@router.get("/me/documents", response_model=list[LegalDocumentOut])
+def my_documents(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_worker)],
+) -> list[LegalDocumentOut]:
+    docs = (
+        db.execute(
+            select(LegalDocument)
+            .where(LegalDocument.recipient_user_id == user.id)
+            .order_by(LegalDocument.created_at.desc())
+        )
+        .scalars()
+        .all()
+    )
+    return [_legal_document_out(d) for d in docs]
+
+
 @router.patch("/me/jobs/{job_id}", response_model=JobOut)
 def update_job_status(
     job_id: UUID,
@@ -165,6 +251,28 @@ def update_job_status(
     else:
         job.status = "rejected"
 
+    db.commit()
+    db.refresh(job)
+    client = db.get(User, job.client_user_id)
+    return _job_out(job, wp.id, client.name if client else "Client")
+
+
+@router.patch("/me/jobs/{job_id}/rate-client", response_model=JobOut)
+def rate_client_for_job(
+    job_id: UUID,
+    body: JobRatingBody,
+    db: Annotated[Session, Depends(get_db)],
+    wp: Annotated[WorkerProfile, Depends(get_worker_profile)],
+) -> JobOut:
+    job = db.get(Job, job_id)
+    if not job or job.worker_profile_id != wp.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+    if job.status != "completed":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You can only rate completed jobs")
+    if job.worker_to_client_rating is not None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You have already rated this client")
+
+    job.worker_to_client_rating = body.rating
     db.commit()
     db.refresh(job)
     client = db.get(User, job.client_user_id)
@@ -242,6 +350,18 @@ def complete_job(
         inv.deductions = breakdown_json
         if inv.invoice_date is None:
             inv.invoice_date = date.today()
+    db.flush()
+
+    worker_user = db.get(User, wp.user_id)
+    client_user = db.get(User, job.client_user_id)
+    if worker_user and client_user:
+        _create_invoice_documents(
+            db,
+            job=job,
+            client=client_user,
+            worker=worker_user,
+            invoice=inv,
+        )
 
     db.commit()
     db.refresh(job)

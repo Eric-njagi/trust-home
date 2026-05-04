@@ -37,4 +37,6 @@ def ensure_schema() -> None:
         conn.execute(
             text("ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS recipient_user_id UUID NULL")
         )
+        conn.execute(text("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS client_to_worker_rating INTEGER NULL"))
+        conn.execute(text("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS worker_to_client_rating INTEGER NULL"))
 

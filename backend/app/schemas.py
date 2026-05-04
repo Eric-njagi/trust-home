@@ -107,6 +107,10 @@ class JobOut(BaseModel):
     date: str
     time: str
     status: str
+    clientRating: int | None = None
+    workerRating: int | None = None
+    canClientRate: bool = False
+    canWorkerRate: bool = False
 
 
 class ClientJobOut(BaseModel):
@@ -117,6 +121,10 @@ class ClientJobOut(BaseModel):
     date: str
     time: str
     status: str
+    clientRating: int | None = None
+    workerRating: int | None = None
+    canClientRate: bool = False
+    canWorkerRate: bool = False
 
 
 class WorkerProfileUpdate(BaseModel):
@@ -149,6 +157,10 @@ class JobCompleteBody(BaseModel):
         ge=1,
         validation_alias=AliasChoices("monthly_amount", "monthlyAmount"),
     )
+
+
+class JobRatingBody(BaseModel):
+    rating: int = Field(ge=1, le=5)
 
 
 class BookingCreate(BaseModel):
@@ -195,4 +207,13 @@ class InvoiceMpesaPay(BaseModel):
         max_length=20,
         validation_alias=AliasChoices("mpesa_phone", "mpesaPhone"),
     )
+
+
+class LegalDocumentOut(BaseModel):
+    id: str
+    jobId: str
+    documentType: str
+    title: str
+    html: str
+    createdAt: str
 

@@ -132,10 +132,37 @@ export const WorkerBrowser = ({ workers, onBooked }) => {
   );
 };
 
-export const ClientJobHistory = ({ jobs }) => {
+export const ClientJobHistory = ({ jobs, onJobsChange }) => {
+  const [busyId, setBusyId] = useState(null);
+  const [error, setError] = useState('');
+
+  const handleRateWorker = async (jobId) => {
+    const raw = prompt('Rate this worker from 1 to 5:', '5');
+    if (raw == null) return;
+    const rating = Number(String(raw).trim());
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      alert('Enter a whole number from 1 to 5.');
+      return;
+    }
+    setBusyId(jobId);
+    setError('');
+    try {
+      await clientApi.rateWorker(jobId, rating);
+      await onJobsChange?.();
+    } catch (err) {
+      setError(err.message || 'Could not submit rating.');
+    } finally {
+      setBusyId(null);
+    }
+  };
   return (
     <div className="card job-list client-job-list">
       <h3>Your job history</h3>
+      {error && (
+        <p className="error-text" role="alert">
+          {error}
+        </p>
+      )}
       {jobs.length === 0 && <p className="muted">No bookings yet.</p>}
       <ul>
         {jobs.map((job) => (
@@ -149,6 +176,23 @@ export const ClientJobHistory = ({ jobs }) => {
             </div>
             <div className="job-actions">
               <span className={`status badge ${job.status}`}>{job.status}</span>
+              {job.status === 'completed' && (
+                <div className="job-buttons">
+                  {job.canClientRate ? (
+                    <button
+                      type="button"
+                      className="btn small primary"
+                      disabled={busyId === job.id}
+                      onClick={() => handleRateWorker(job.id)}
+                    >
+                      {busyId === job.id ? 'Submitting…' : 'Rate worker'}
+                    </button>
+                  ) : (
+                    <p className="muted">Your rating: {job.clientRating}/5</p>
+                  )}
+                  {job.workerRating != null && <p className="muted">Worker rated you: {job.workerRating}/5</p>}
+                </div>
+              )}
             </div>
           </li>
         ))}
